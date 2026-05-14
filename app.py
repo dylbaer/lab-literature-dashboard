@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED UI/UX & GLASSMORPHISM CSS ---
+# --- ADVANCED UI/UX & BIOLUMINESCENT GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -41,75 +41,120 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Dynamic Premium Hero Banner */
-    @keyframes orbitGlow {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* --- THE BIOLUMINESCENT HERO BANNER --- */
+    
+    @keyframes floatOrb1 {
+        0% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0, 0) scale(1); }
     }
-    .hero-banner {
+    @keyframes floatOrb2 {
+        0% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(-40px, 30px) scale(1.2); }
+        66% { transform: translate(20px, -20px) scale(0.8); }
+        100% { transform: translate(0, 0) scale(1); }
+    }
+    @keyframes borderGlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .hero-wrapper {
         position: relative;
-        background: rgba(15, 23, 42, 0.75);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        padding: 55px 40px;
-        border-radius: 24px;
-        text-align: center;
-        margin-bottom: 45px;
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 50px;
+        border-radius: 26px;
+        padding: 2px; /* Acts as the iridescent border thickness */
+        background: linear-gradient(90deg, #00F0FF, #7000FF, #FF007F, #00D2B6);
+        background-size: 300% 300%;
+        animation: borderGlow 8s ease infinite;
+        box-shadow: 0 25px 50px -12px rgba(112, 0, 255, 0.3);
         overflow: hidden;
     }
-    .hero-banner::before {
+
+    /* The glowing orbs behind the glass */
+    .hero-wrapper::before, .hero-wrapper::after {
         content: '';
         position: absolute;
-        top: -100%; left: -100%; width: 300%; height: 300%;
-        background: radial-gradient(circle at 50% 50%, rgba(0, 210, 182, 0.12) 0%, transparent 40%),
-                    radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%);
-        animation: orbitGlow 25s linear infinite;
-        z-index: 0;
-        pointer-events: none;
-    }
-    .hero-content {
-        position: relative;
+        filter: blur(60px);
         z-index: 1;
+        opacity: 0.8;
     }
-    .hero-title {
-        font-size: 3rem;
-        font-weight: 800;
-        margin-bottom: 15px;
-        letter-spacing: -0.04em;
-        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    .hero-wrapper::before {
+        width: 400px; height: 400px;
+        background: #00F0FF; /* Neon Cyan */
+        top: -100px; left: -100px;
+        animation: floatOrb1 12s infinite ease-in-out;
     }
-    .hero-subtitle {
-        font-size: 1.2rem;
-        font-weight: 400;
-        color: #94a3b8;
-        max-width: 700px;
-        margin: 0 auto;
-        line-height: 1.5;
+    .hero-wrapper::after {
+        width: 500px; height: 500px;
+        background: #FF007F; /* Magenta */
+        bottom: -150px; right: -100px;
+        animation: floatOrb2 15s infinite ease-in-out;
+    }
+    /* Third orb for deep ultraviolet depth */
+    .hero-inner-orb {
+        position: absolute;
+        width: 300px; height: 300px;
+        background: #7000FF; /* Ultraviolet */
+        top: 20%; left: 40%;
+        filter: blur(50px);
+        z-index: 1;
+        animation: floatOrb1 18s infinite ease-in-out reverse;
+    }
+
+    /* The actual frosted glass card */
+    .hero-banner {
+        position: relative;
+        background: rgba(10, 15, 30, 0.4); /* Very dark, very transparent to let colors bleed through */
+        backdrop-filter: blur(40px) saturate(160%);
+        -webkit-backdrop-filter: blur(40px) saturate(160%);
+        padding: 65px 40px;
+        border-radius: 24px;
+        text-align: center;
+        z-index: 2;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -1px 1px rgba(0,0,0,0.4);
     }
     
-    /* Elegant "Created by" Badge */
+    .hero-title {
+        font-size: 3.2rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 40px rgba(0, 240, 255, 0.3);
+    }
+    .hero-subtitle {
+        font-size: 1.25rem;
+        font-weight: 400;
+        color: #e2e8f0;
+        max-width: 750px;
+        margin: 0 auto;
+        line-height: 1.6;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    
+    /* Neon Pill Badge */
     .creator-badge {
         display: inline-block;
-        margin-top: 25px;
-        padding: 8px 20px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-top: 30px;
+        padding: 8px 24px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(0, 240, 255, 0.4);
         border-radius: 30px;
-        font-size: 0.85rem;
-        color: #64748b;
+        font-size: 0.9rem;
+        color: #cbd5e1;
         font-weight: 500;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        letter-spacing: 1px;
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.1);
         backdrop-filter: blur(10px);
     }
     .creator-badge span {
-        color: #00D2B6;
-        font-weight: 700;
+        color: #00F0FF; /* Glowing Cyan */
+        font-weight: 800;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
 
     /* Center Tabs & Styling */
@@ -133,7 +178,6 @@ st.markdown("""
 # --- UTILITY FUNCTIONS ---
 
 def strip_tags(text):
-    """Deep cleans HTML tags out of RSS feed titles."""
     if not text: return "N/A"
     decoded = html.unescape(str(text))
     clean = re.sub(r'<[^>]+>', '', decoded)
@@ -229,13 +273,14 @@ queries = {
     "HCC": '"hepatocellular carcinoma" AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint")'
 }
 
-# --- DYNAMIC HEADER UI ---
+# --- DYNAMIC HERO UI INJECTION ---
 st.markdown("""
-<div class="hero-banner">
-    <div class="hero-content">
+<div class="hero-wrapper">
+    <div class="hero-inner-orb"></div>
+    <div class="hero-banner">
         <div class="hero-title">Lab Literature Dashboard</div>
         <div class="hero-subtitle">Real-time curation of relevant publications, preprints, and industry news.</div>
-        <div class="creator-badge">Created by <span>Dylan</span></div>
+        <div class="creator-badge">CREATED BY <span>DYLAN</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -304,7 +349,6 @@ def render_papers(all_papers, lit_type, target_journals):
         clean_abstract = safe_text(re.sub(r'<[^>]+>', '', raw_abstract))
         conclusion = safe_text(extract_conclusion(raw_abstract))
 
-        # Build dynamic badges
         badges_html = f"""<span style="background-color: {theme['solid']}; color: white; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">{raw_journal}</span>"""
         if is_oa:
             badges_html += f"""<span style="background-color: #DEF7EC; color: #03543F; border: 1px solid #31C48D; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; margin-right: 10px;">🔓 Open Access</span>"""
@@ -340,9 +384,9 @@ def render_papers(all_papers, lit_type, target_journals):
 tabs = st.tabs([
     "🧬 SynBio", 
     "🧮 Logic Circuits", 
-    "🦠 AAV Eng", 
-    "🏭 CMC & Mfg", 
-    "💉 Non-Viral", 
+    "🦠 AAV Engineering", 
+    "🏭 CMC & Manufacturing", 
+    "💉 Non-Viral Delivery", 
     "🔬 Viral Delivery", 
     "🎯 HCC", 
     "📈 Industry News"
