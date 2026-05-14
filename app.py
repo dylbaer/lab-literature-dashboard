@@ -23,9 +23,16 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Global App Background */
+    /* Premium Technical Dot-Grid & Mesh Gradient Background */
     .stApp {
-        background-color: #F1F5F9; 
+        background-color: #F8FAFC;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(0, 210, 182, 0.08) 0px, transparent 40%),
+            radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 40%),
+            radial-gradient(at 100% 100%, rgba(0, 210, 182, 0.08) 0px, transparent 40%),
+            radial-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+        background-attachment: fixed;
     }
     
     /* Clean, Professional Hero Banner */
@@ -38,17 +45,36 @@ st.markdown("""
         margin-bottom: 40px;
         box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
         border: 1px solid #334155;
+        position: relative;
+        overflow: hidden;
     }
+    
+    /* Subtle geometric accent in the banner */
+    .hero-banner::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(0,210,182,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
     .hero-title {
         font-size: 2.6rem;
         font-weight: 800;
         margin-bottom: 10px;
         letter-spacing: -0.03em;
+        position: relative;
+        z-index: 2;
     }
     .hero-subtitle {
         font-size: 1.15rem;
         font-weight: 400;
         color: #94A3B8;
+        position: relative;
+        z-index: 2;
     }
 
     /* Center Tabs */
@@ -98,16 +124,18 @@ def get_card_theme(journal_name, is_preprint):
     elif "new england" in j_lower or "nejm" in j_lower:
         return {"bg": "#EEF2FF", "solid": "#4F46E5", "text": "#312E81", "label": "CLINICAL"} # Indigo
     else:
-        return {"bg": "#F8FAFC", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"} # Slate
+        return {"bg": "#FFFFFF", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"} # White/Slate
 
 # --- ROBUST DATA FETCHING ---
 
 @st.cache_data(ttl=43200, show_spinner=False)
 def fetch_papers(topic_query, days_back=30):
     date_from = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-    date_to = datetime.now().strftime('%Y-%m-%d')
+    # Extend date_to into the future to catch "Ahead of Print" indexing
+    date_to = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
     
-    full_query = f'({topic_query}) AND FIRST_PDATE:[{date_from} TO {date_to}]'
+    # Adding sort_date:y guarantees the API returns the newest 150, not the most relevant 150
+    full_query = f'({topic_query}) AND FIRST_PDATE:[{date_from} TO {date_to}] sort_date:y'
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
     
     params = {'query': full_query, 'format': 'json', 'resultType': 'core', 'pageSize': 150}
@@ -221,9 +249,8 @@ def render_papers(all_papers, lit_type, target_journals):
         clean_abstract = safe_text(re.sub(r'<[^>]+>', '', raw_abstract))
         conclusion = safe_text(extract_conclusion(raw_abstract))
 
-        # HTML injection compressed to a single line using .replace('\n', '') to prevent Streamlit Markdown bugs
         html_card = f"""
-        <div style="background-color: {theme['bg']}; border: 1px solid #CBD5E1; border-left: 8px solid {theme['solid']}; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+        <div style="background-color: {theme['bg']}; border: 1px solid rgba(0,0,0,0.05); border-left: 8px solid {theme['solid']}; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
             <div style="display: flex; align-items: center; margin-bottom: 15px;">
                 <span style="background-color: {theme['solid']}; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     {raw_journal}
@@ -238,13 +265,13 @@ def render_papers(all_papers, lit_type, target_journals):
             <div style="font-size: 1rem; color: #475569; margin-bottom: 20px;">
                 <strong>Published:</strong> {date} &nbsp;|&nbsp; <i>{authors}</i>
             </div>
-            <details style="cursor: pointer; outline: none; background-color: white; padding: 12px 15px; border-radius: 8px; border: 1px solid #E2E8F0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <details style="cursor: pointer; outline: none; background-color: rgba(255,255,255,0.8); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.04); box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
                 <summary style="font-size: 1rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
                     ▶ View Abstract & Extracted Conclusion
                 </summary>
-                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid #E2E8F0;">
+                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.04);">
                     <p style="margin-bottom: 20px;">{clean_abstract}</p>
-                    <div style="background-color: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0;">
+                    <div style="background-color: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,0,0,0.03); border-left-width: 4px;">
                         <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Extracted Conclusion</strong>
                         {conclusion}
                     </div>
@@ -287,7 +314,7 @@ with t_news:
                 l = item['link']
                 
                 news_card = f"""
-                <div style="background-color: white; border: 1px solid #CBD5E1; border-left: 6px solid #4F46E5; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                <div style="background-color: white; border: 1px solid rgba(0,0,0,0.05); border-left: 6px solid #4F46E5; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);">
                     <div style="font-size: 0.8rem; font-weight: 800; color: #4F46E5; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
                     <a href="{l}" target="_blank" style="font-size: 1.2rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
                     <div style="font-size: 0.9rem; color: #64748B;">Published: {d}</div>
