@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import time
 import re
 import html
+import pandas as pd
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -14,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED UI/UX CSS INJECTION ---
+# --- ADVANCED UI/UX & GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -23,77 +24,80 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Premium Technical Dot-Grid & Mesh Gradient Background */
+    /* Animated Mesh Gradient Background */
+    @keyframes mesh {
+        0% { background-position: 0% 0%; }
+        50% { background-position: 100% 100%; }
+        100% { background-position: 0% 0%; }
+    }
     .stApp {
-        background-color: #F8FAFC;
+        background-color: #f1f5f9;
         background-image: 
-            radial-gradient(at 0% 0%, rgba(0, 210, 182, 0.08) 0px, transparent 40%),
-            radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 40%),
-            radial-gradient(at 100% 100%, rgba(0, 210, 182, 0.08) 0px, transparent 40%),
-            radial-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 1px);
-        background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px;
+            radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+            radial-gradient(at 90% 10%, rgba(0, 210, 182, 0.15) 0px, transparent 50%),
+            radial-gradient(at 30% 80%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+            radial-gradient(at 80% 90%, rgba(14, 165, 233, 0.12) 0px, transparent 50%);
+        background-size: 200% 200%;
+        animation: mesh 25s ease infinite;
         background-attachment: fixed;
     }
     
-    /* Clean, Professional Hero Banner */
+    /* Glassmorphism Hero Banner */
     .hero-banner {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        padding: 40px 30px;
-        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 45px 30px;
+        border-radius: 16px;
         text-align: center;
-        color: white;
         margin-bottom: 40px;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
-        border: 1px solid #334155;
-        position: relative;
-        overflow: hidden;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    /* Subtle geometric accent in the banner */
-    .hero-banner::after {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 300px;
-        height: 300px;
-        background: radial-gradient(circle, rgba(0,210,182,0.15) 0%, transparent 70%);
-        border-radius: 50%;
-    }
-
     .hero-title {
-        font-size: 2.6rem;
+        font-size: 2.8rem;
         font-weight: 800;
-        margin-bottom: 10px;
-        letter-spacing: -0.03em;
-        position: relative;
-        z-index: 2;
+        margin-bottom: 12px;
+        letter-spacing: -0.04em;
+        background: linear-gradient(to right, #ffffff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .hero-subtitle {
         font-size: 1.15rem;
-        font-weight: 400;
-        color: #94A3B8;
-        position: relative;
-        z-index: 2;
+        font-weight: 500;
+        color: #cbd5e1;
     }
 
-    /* Center Tabs */
+    /* Center Tabs & Styling */
     div[data-baseweb="tab-list"] {
         justify-content: center !important;
-        gap: 30px;
+        gap: 15px;
+        flex-wrap: wrap;
     }
     div[data-baseweb="tab"] {
-        font-size: 1.15rem !important;
+        font-size: 1.05rem !important;
         font-weight: 600 !important;
         padding-bottom: 15px !important;
+        color: #475569 !important;
+    }
+    div[data-baseweb="tab"][aria-selected="true"] {
+        color: #0F172A !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- UTILITY FUNCTIONS ---
 
+def strip_tags(text):
+    """Deep cleans HTML tags out of RSS feed titles."""
+    if not text: return "N/A"
+    decoded = html.unescape(str(text))
+    clean = re.sub(r'<[^>]+>', '', decoded)
+    return html.escape(clean.strip())
+
 def safe_text(text):
-    """Escapes text to prevent HTML injection breaks."""
     if not text: return "N/A"
     return html.escape(str(text))
 
@@ -111,31 +115,29 @@ def get_journal_name(paper_data):
     return raw if raw else "Unknown Publisher"
 
 def get_card_theme(journal_name, is_preprint):
-    """Returns exact hex codes for highly visible tinted backgrounds and solid borders."""
     j_lower = journal_name.lower()
     if is_preprint or "rxiv" in j_lower:
-        return {"bg": "#FFFBEB", "solid": "#D97706", "text": "#92400E", "label": "PREPRINT"} # Amber
+        return {"bg": "rgba(255, 251, 235, 0.65)", "solid": "#D97706", "text": "#92400E", "label": "PREPRINT"}
     elif "nature" in j_lower:
-        return {"bg": "#ECFDF5", "solid": "#059669", "text": "#064E3B", "label": "NATURE PORTFOLIO"} # Emerald
+        return {"bg": "rgba(236, 253, 245, 0.65)", "solid": "#059669", "text": "#064E3B", "label": "NATURE PORTFOLIO"}
     elif "cell" in j_lower:
-        return {"bg": "#FEF2F2", "solid": "#DC2626", "text": "#7F1D1D", "label": "CELL PRESS"} # Red
+        return {"bg": "rgba(254, 242, 242, 0.65)", "solid": "#DC2626", "text": "#7F1D1D", "label": "CELL PRESS"}
     elif "science" in j_lower:
-        return {"bg": "#F0F9FF", "solid": "#0284C7", "text": "#0C4A6E", "label": "SCIENCE MAG"} # Sky Blue
+        return {"bg": "rgba(240, 249, 255, 0.65)", "solid": "#0284C7", "text": "#0C4A6E", "label": "SCIENCE MAG"}
     elif "new england" in j_lower or "nejm" in j_lower:
-        return {"bg": "#EEF2FF", "solid": "#4F46E5", "text": "#312E81", "label": "CLINICAL"} # Indigo
+        return {"bg": "rgba(238, 242, 255, 0.65)", "solid": "#4F46E5", "text": "#312E81", "label": "CLINICAL"}
     else:
-        return {"bg": "#FFFFFF", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"} # White/Slate
+        return {"bg": "rgba(255, 255, 255, 0.65)", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"}
 
 # --- ROBUST DATA FETCHING ---
 
 @st.cache_data(ttl=43200, show_spinner=False)
-def fetch_papers(topic_query, days_back=30):
+def fetch_papers(topic_query, days_back=30, oa_only=False):
     date_from = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-    # Extend date_to into the future to catch "Ahead of Print" indexing
     date_to = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
     
-    # Adding sort_date:y guarantees the API returns the newest 150, not the most relevant 150
-    full_query = f'({topic_query}) AND FIRST_PDATE:[{date_from} TO {date_to}] sort_date:y'
+    oa_flag = " AND (OPEN_ACCESS:y)" if oa_only else ""
+    full_query = f'({topic_query}){oa_flag} AND FIRST_PDATE:[{date_from} TO {date_to}] sort_date:y'
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
     
     params = {'query': full_query, 'format': 'json', 'resultType': 'core', 'pageSize': 150}
@@ -166,7 +168,7 @@ def fetch_news():
                     except: pass 
                 news_items.append({
                     'source': source,
-                    'title': entry.get('title', 'Untitled'),
+                    'title': strip_tags(entry.get('title', 'Untitled')), # Uses new deep-cleaning function
                     'link': entry.get('link', '#'),
                     'published_str': dt.strftime('%b %d, %Y'),
                     'date_obj': dt
@@ -174,10 +176,16 @@ def fetch_news():
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
-# --- QUERIES ---
-query_circuits = '("synthetic gene circuit" OR "synthetic biology" OR "genetic circuit") AND ("AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "cancer")'
-query_aav = '"AAV" OR "adeno-associated virus" OR "AAV engineering" OR "AAV capsid"'
-query_hcc = '"hepatocellular carcinoma" AND "immunotherapy"'
+# --- HIGHLY TARGETED QUERIES ---
+queries = {
+    "SynBio": '"synthetic biology" OR "synthetic gene circuit" OR "genetic circuit"',
+    "Logic": '("AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic") AND ("synthetic biology" OR "cell" OR "gene" OR "cancer")',
+    "AAV": '"AAV" OR "adeno-associated virus" OR "AAV capsid"',
+    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up")',
+    "NonViral": '"LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "exosome"',
+    "ViralBroad": '"viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus"',
+    "HCC": '"hepatocellular carcinoma" AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint")'
+}
 
 # --- HEADER UI ---
 st.markdown("""
@@ -193,8 +201,10 @@ with st.sidebar:
     
     literature_filter = st.radio("Source Filter:", ["All", "Peer-Reviewed Only", "Preprints Only"])
     
+    st.markdown("#### Open Access")
+    open_access_only = st.checkbox("🔓 Show Open Access Only", value=False, help="Only return papers with freely available full text.")
+    
     st.markdown("#### Journal Isolation")
-    st.caption("Leave empty to search all journals.")
     selected_journals = st.multiselect(
         "Isolate target publications:",
         ["Nature", "Cell", "Science", "New England Journal of Medicine", 
@@ -211,8 +221,8 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- RENDERING LOGIC ---
-def render_papers(all_papers, lit_type, target_journals):
+# --- RENDERING LOGIC & CSV EXPORT ---
+def render_papers(all_papers, lit_type, target_journals, category_name):
     filtered_papers = []
     
     for p in all_papers:
@@ -228,14 +238,35 @@ def render_papers(all_papers, lit_type, target_journals):
         filtered_papers.append(p)
 
     if not filtered_papers:
-        st.warning("No publications met the criteria. Try broadening your timeframe or clearing the journal filter.")
+        st.warning("No publications met the criteria. Try broadening your timeframe or clearing filters.")
         return
         
+    # Generate CSV Data for Export
+    csv_data = []
+    for p in filtered_papers:
+        csv_data.append({
+            "Title": p.get('title', 'Unknown'),
+            "Journal": get_journal_name(p),
+            "Date": p.get('firstPublicationDate', ''),
+            "Authors": p.get('authorString', ''),
+            "DOI": p.get('doi', ''),
+            "Citations": p.get('citedByCount', 0)
+        })
+    df = pd.DataFrame(csv_data)
+    
+    col1, col2 = st.columns([8, 2])
+    with col2:
+        st.download_button(label=f"📥 Download {len(filtered_papers)} Papers (CSV)", 
+                           data=df.to_csv(index=False).encode('utf-8'), 
+                           file_name=f"{category_name}_literature.csv", 
+                           mime='text/csv')
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+
     for p in filtered_papers:
         title = safe_text(p.get('title', 'Unknown Title'))
         raw_journal = safe_text(get_journal_name(p))
         is_preprint = p.get('pubType', '') == 'preprint' or p.get('source') == 'PPR' or "rxiv" in raw_journal.lower()
-        
         theme = get_card_theme(raw_journal, is_preprint)
         
         date = safe_text(p.get('firstPublicationDate', 'Unknown Date'))
@@ -243,36 +274,37 @@ def render_papers(all_papers, lit_type, target_journals):
         doi = p.get('doi', '')
         pmid = p.get('pmid', '')
         raw_abstract = p.get('abstractText', 'No abstract available.')
+        citations = p.get('citedByCount', 0)
+        is_oa = p.get('isOpenAccess', 'N') == 'Y'
         
         link = f"https://doi.org/{doi}" if doi else f"https://europepmc.org/article/MED/{pmid}" if pmid else "#"
-
         clean_abstract = safe_text(re.sub(r'<[^>]+>', '', raw_abstract))
         conclusion = safe_text(extract_conclusion(raw_abstract))
 
+        # Build dynamic badges
+        badges_html = f"""<span style="background-color: {theme['solid']}; color: white; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">{raw_journal}</span>"""
+        if is_oa:
+            badges_html += f"""<span style="background-color: #DEF7EC; color: #03543F; border: 1px solid #31C48D; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; margin-right: 10px;">🔓 Open Access</span>"""
+
         html_card = f"""
-        <div style="background-color: {theme['bg']}; border: 1px solid rgba(0,0,0,0.05); border-left: 8px solid {theme['solid']}; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                <span style="background-color: {theme['solid']}; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    {raw_journal}
-                </span>
-                <span style="font-size: 0.85rem; font-weight: 700; color: {theme['text']}; text-transform: uppercase; letter-spacing: 0.5px;">
-                    {theme['label']}
-                </span>
+        <div style="background: {theme['bg']}; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); border-left: 8px solid {theme['solid']}; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);">
+            <div style="display: flex; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                {badges_html}
             </div>
-            <a href="{link}" target="_blank" style="font-size: 1.35rem; font-weight: 800; color: #0F172A; text-decoration: none; display: block; margin-bottom: 12px; line-height: 1.3;">
+            <a href="{link}" target="_blank" style="font-size: 1.3rem; font-weight: 800; color: #0F172A; text-decoration: none; display: block; margin-bottom: 10px; line-height: 1.4;">
                 {title}
             </a>
-            <div style="font-size: 1rem; color: #475569; margin-bottom: 20px;">
-                <strong>Published:</strong> {date} &nbsp;|&nbsp; <i>{authors}</i>
+            <div style="font-size: 0.95rem; color: #475569; margin-bottom: 18px;">
+                <strong>{date}</strong> &nbsp;|&nbsp; 📊 Citations: {citations} &nbsp;|&nbsp; <i>{authors}</i>
             </div>
-            <details style="cursor: pointer; outline: none; background-color: rgba(255,255,255,0.8); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.04); box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
-                <summary style="font-size: 1rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
+            <details style="cursor: pointer; outline: none; background: rgba(255,255,255,0.9); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <summary style="font-size: 0.95rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
                     ▶ View Abstract & Extracted Conclusion
                 </summary>
-                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.04);">
-                    <p style="margin-bottom: 20px;">{clean_abstract}</p>
-                    <div style="background-color: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,0,0,0.03); border-left-width: 4px;">
-                        <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Extracted Conclusion</strong>
+                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.06);">
+                    <p style="margin-bottom: 15px;">{clean_abstract}</p>
+                    <div style="background: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,0,0,0.05); border-left-width: 4px;">
+                        <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">Extracted Conclusion</strong>
                         {conclusion}
                     </div>
                 </div>
@@ -281,27 +313,34 @@ def render_papers(all_papers, lit_type, target_journals):
         """
         st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
 
-# --- TABBED NAVIGATION ---
-t_circuits, t_aav, t_hcc, t_news = st.tabs([
-    "🧬 SynBio & Logic Circuits", 
+# --- EXPANDED TABBED NAVIGATION ---
+tabs = st.tabs([
+    "🧬 SynBio", 
+    "🧮 Logic Circuits", 
     "🦠 AAV Engineering", 
-    "🔬 HCC Immunotherapy", 
+    "🏭 CMC & Manufacturing", 
+    "💉 Non-Viral Delivery", 
+    "🔬 Viral Delivery", 
+    "🎯 HCC", 
     "📈 Industry News"
 ])
 
-with t_circuits:
-    with st.spinner('Querying EuropePMC...'):
-        render_papers(fetch_papers(query_circuits, days_to_fetch), literature_filter, selected_journals)
+tab_mapping = [
+    (tabs[0], queries["SynBio"], "SynBio"),
+    (tabs[1], queries["Logic"], "Logic_Circuits"),
+    (tabs[2], queries["AAV"], "AAV_Engineering"),
+    (tabs[3], queries["CMC"], "CMC_Manufacturing"),
+    (tabs[4], queries["NonViral"], "NonViral_Delivery"),
+    (tabs[5], queries["ViralBroad"], "Viral_Delivery"),
+    (tabs[6], queries["HCC"], "HCC_Immunotherapy")
+]
 
-with t_aav:
-    with st.spinner('Querying EuropePMC...'):
-        render_papers(fetch_papers(query_aav, days_to_fetch), literature_filter, selected_journals)
+for tab, query, name in tab_mapping:
+    with tab:
+        with st.spinner('Querying EuropePMC...'):
+            render_papers(fetch_papers(query, days_to_fetch, open_access_only), literature_filter, selected_journals, name)
 
-with t_hcc:
-    with st.spinner('Querying EuropePMC...'):
-        render_papers(fetch_papers(query_hcc, days_to_fetch), literature_filter, selected_journals)
-
-with t_news:
+with tabs[7]:
     with st.spinner('Aggregating RSS Feeds...'):
         news = fetch_news()
         if not news:
@@ -314,10 +353,10 @@ with t_news:
                 l = item['link']
                 
                 news_card = f"""
-                <div style="background-color: white; border: 1px solid rgba(0,0,0,0.05); border-left: 6px solid #4F46E5; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);">
-                    <div style="font-size: 0.8rem; font-weight: 800; color: #4F46E5; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
-                    <a href="{l}" target="_blank" style="font-size: 1.2rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
-                    <div style="font-size: 0.9rem; color: #64748B;">Published: {d}</div>
+                <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.9); border-left: 6px solid #4F46E5; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
+                    <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
+                    <div style="font-size: 0.9rem; color: #64748B; font-weight: 500;">Published: {d}</div>
                 </div>
                 """
                 st.markdown(news_card.replace('\n', ''), unsafe_allow_html=True)
