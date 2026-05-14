@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED UI/UX & EXTREME PASTEL GLASSMORPHISM CSS ---
+# --- ADVANCED UI/UX & BALANCED PASTEL GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -23,36 +23,36 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Animated Mesh Gradient Background for the App (Softened Pastels) */
+    /* Harmonic Pastel Background for the App */
     @keyframes mesh {
         0% { background-position: 0% 0%; }
         50% { background-position: 100% 100%; }
         100% { background-position: 0% 0%; }
     }
     .stApp {
-        background-color: #fdfcfd; /* Very faint pinkish white */
+        background-color: #F3F0F8; /* Subtle Dusty Lavender Base */
         background-image: 
-            radial-gradient(at 10% 20%, rgba(216, 180, 254, 0.1) 0px, transparent 50%), /* Pastel Purple */
-            radial-gradient(at 90% 10%, rgba(249, 168, 212, 0.12) 0px, transparent 50%), /* Pastel Pink */
-            radial-gradient(at 30% 80%, rgba(224, 231, 255, 0.1) 0px, transparent 50%), /* Pastel Indigo */
-            radial-gradient(at 80% 90%, rgba(253, 226, 243, 0.1) 0px, transparent 50%); /* Soft Peach */
+            radial-gradient(at 15% 25%, rgba(216, 180, 254, 0.25) 0px, transparent 60%), /* Richer Lavender */
+            radial-gradient(at 85% 15%, rgba(249, 168, 212, 0.25) 0px, transparent 60%), /* Richer Pink */
+            radial-gradient(at 35% 85%, rgba(196, 181, 253, 0.2) 0px, transparent 60%), /* Deep Periwinkle */
+            radial-gradient(at 85% 85%, rgba(253, 226, 243, 0.25) 0px, transparent 60%); /* Soft Rose */
         background-size: 200% 200%;
         animation: mesh 25s ease infinite;
         background-attachment: fixed;
     }
     
-    /* --- THE EXTREME PASTEL GLASSMORPHISM HERO BANNER --- */
+    /* --- THE ELEVATED PASTEL GLASSMORPHISM HERO BANNER --- */
     
     @keyframes floatOrb1 {
         0% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(30px, -50px) scale(1.05); }
-        66% { transform: translate(-20px, 20px) scale(0.95); }
+        33% { transform: translate(40px, -40px) scale(1.05); }
+        66% { transform: translate(-30px, 30px) scale(0.95); }
         100% { transform: translate(0, 0) scale(1); }
     }
     @keyframes floatOrb2 {
         0% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(-40px, 30px) scale(1.1); }
-        66% { transform: translate(20px, -20px) scale(0.9); }
+        33% { transform: translate(-50px, 40px) scale(1.1); }
+        66% { transform: translate(30px, -30px) scale(0.9); }
         100% { transform: translate(0, 0) scale(1); }
     }
     @keyframes borderGlow {
@@ -60,17 +60,26 @@ st.markdown("""
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
+    @keyframes floatCard {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 15px rgba(216, 180, 254, 0.2); }
+        50% { box-shadow: 0 0 25px rgba(249, 168, 212, 0.5); }
+        100% { box-shadow: 0 0 15px rgba(216, 180, 254, 0.2); }
+    }
 
     .hero-wrapper {
         position: relative;
         margin-bottom: 50px;
         border-radius: 26px;
-        padding: 1px; /* The extreme glass edge */
-        /* Pastel Iridescent Border */
-        background: linear-gradient(90deg, #F9A8D4, #D8B4FE, #FDF2F8, #F9A8D4);
+        padding: 2px; /* The extreme glass edge */
+        background: linear-gradient(90deg, #F9A8D4, #D8B4FE, #FBCFE8, #C4B5FD);
         background-size: 300% 300%;
-        animation: borderGlow 8s ease infinite;
-        box-shadow: 0 25px 60px -10px rgba(216, 180, 254, 0.4), 0 10px 20px -5px rgba(249, 168, 212, 0.2);
+        animation: borderGlow 6s ease infinite, floatCard 8s ease-in-out infinite;
+        box-shadow: 0 25px 60px -10px rgba(196, 181, 253, 0.35), 0 10px 20px -5px rgba(249, 168, 212, 0.25);
         overflow: hidden;
     }
 
@@ -78,47 +87,46 @@ st.markdown("""
     .hero-wrapper::before, .hero-wrapper::after {
         content: '';
         position: absolute;
-        filter: blur(70px);
+        filter: blur(75px);
         z-index: 1;
-        opacity: 0.9;
+        opacity: 0.95;
     }
     .hero-wrapper::before {
         width: 500px; height: 500px;
         background: #F9A8D4; /* Cotton Candy Pink */
         top: -150px; left: -100px;
-        animation: floatOrb1 15s infinite ease-in-out;
+        animation: floatOrb1 14s infinite ease-in-out;
     }
     .hero-wrapper::after {
         width: 600px; height: 600px;
-        background: #D8B4FE; /* Bright Lavender */
+        background: #C4B5FD; /* Bright Periwinkle/Lavender */
         bottom: -200px; right: -150px;
-        animation: floatOrb2 18s infinite ease-in-out;
+        animation: floatOrb2 16s infinite ease-in-out;
     }
     /* Inner orb for soft pastel mixing */
     .hero-inner-orb {
         position: absolute;
-        width: 400px; height: 400px;
+        width: 450px; height: 450px;
         background: #FDF2F8; /* Pale Pink White */
-        top: 10%; left: 35%;
-        filter: blur(60px);
+        top: 5%; left: 30%;
+        filter: blur(65px);
         z-index: 1;
-        animation: floatOrb1 20s infinite ease-in-out reverse;
+        animation: floatOrb1 22s infinite ease-in-out reverse;
     }
 
     /* The actual EXTREME FROSTED GLASS card */
     .hero-banner {
         position: relative;
-        /* Ultra Light, Ultra Translucent base for extreme refraction */
-        background: rgba(255, 255, 255, 0.1); 
-        backdrop-filter: blur(50px) saturate(190%);
-        -webkit-backdrop-filter: blur(50px) saturate(190%);
+        /* Balanced translucent base for natural refraction */
+        background: rgba(255, 255, 255, 0.15); 
+        backdrop-filter: blur(45px) saturate(180%);
+        -webkit-backdrop-filter: blur(45px) saturate(180%);
         padding: 70px 40px;
         border-radius: 24px;
         text-align: center;
         z-index: 2;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        /* Highlights mimicking heavy acrylic edges */
-        box-shadow: inset 0 2px 2px rgba(255,255,255,0.4), inset 0 -2px 2px rgba(0,0,0,0.02);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), inset 0 -2px 5px rgba(216,180,254,0.1);
     }
     
     .hero-title {
@@ -126,39 +134,39 @@ st.markdown("""
         font-weight: 800;
         margin-bottom: 12px;
         letter-spacing: -0.04em;
-        color: #1E293B; /* Deep Indigo Slate for perfect legibility against light glass */
-        text-shadow: 0 4px 10px rgba(255,255,255,0.8), 0 0 20px rgba(216, 180, 254, 0.2);
+        color: #2D3748; /* Deep Amethyst Slate - perfectly legible, less harsh than pure black */
+        text-shadow: 0 2px 10px rgba(255,255,255,0.9), 0 0 30px rgba(255, 255, 255, 0.5);
     }
     .hero-subtitle {
         font-size: 1.25rem;
-        font-weight: 400;
-        color: #475569;
+        font-weight: 500;
+        color: #4A5568;
         max-width: 750px;
         margin: 0 auto;
         line-height: 1.6;
     }
     
-    /* Clean "Made by" Badge - Pastel Theme */
+    /* Elegant "Made by" Badge - Ambient Pulse */
     .creator-badge {
         display: inline-block;
         margin-top: 30px;
         padding: 8px 24px;
-        background: rgba(255, 255, 255, 0.4);
-        border: 1px solid rgba(216, 180, 254, 0.5);
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(216, 180, 254, 0.6);
         border-radius: 30px;
-        font-size: 0.9rem;
-        color: #64748b;
+        font-size: 0.95rem;
+        color: #4A5568;
         font-weight: 500;
-        letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(216, 180, 254, 0.1);
+        letter-spacing: 0.5px;
+        animation: pulseGlow 4s infinite alternate;
         backdrop-filter: blur(10px);
     }
     .creator-badge span {
-        color: #D8B4FE; /* Bright Lavender */
-        font-weight: 700;
+        color: #9F7AEA; /* Deep Lavender Accent */
+        font-weight: 800;
     }
 
-    /* Center Tabs & Styling ( Respecting light theme ) */
+    /* Center Tabs & Styling */
     div[data-baseweb="tab-list"] {
         justify-content: center !important;
         gap: 15px;
@@ -168,10 +176,10 @@ st.markdown("""
         font-size: 1.05rem !important;
         font-weight: 600 !important;
         padding-bottom: 15px !important;
-        color: #64748b !important;
+        color: #718096 !important;
     }
     div[data-baseweb="tab"][aria-selected="true"] {
-        color: #0F172A !important;
+        color: #2D3748 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -274,7 +282,7 @@ queries = {
     "HCC": '("hepatocellular carcinoma" OR "HCC") AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint" OR "T-cell therapy")'
 }
 
-# --- DYNAMIC HERO UI INJECTION (PASTEL GLASS Theme) ---
+# --- DYNAMIC HERO UI INJECTION (ANIMATED PASTEL GLASS) ---
 st.markdown("""
 <div class="hero-wrapper">
     <div class="hero-inner-orb"></div>
@@ -359,17 +367,17 @@ def render_papers(all_papers, lit_type, target_journals):
             <div style="display: flex; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 {badges_html}
             </div>
-            <a href="{link}" target="_blank" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; text-decoration: none; display: block; margin-bottom: 10px; line-height: 1.4;">
+            <a href="{link}" target="_blank" style="font-size: 1.3rem; font-weight: 800; color: #1E293B; text-decoration: none; display: block; margin-bottom: 10px; line-height: 1.4;">
                 {title}
             </a>
-            <div style="font-size: 0.95rem; color: #475569; margin-bottom: 18px;">
+            <div style="font-size: 0.95rem; color: #4A5568; margin-bottom: 18px;">
                 <strong>{date}</strong> &nbsp;|&nbsp; 📊 Citations: {citations} &nbsp;|&nbsp; <i>{authors}</i>
             </div>
             <details style="cursor: pointer; outline: none; background: rgba(255,255,255,0.95); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
                 <summary style="font-size: 0.95rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
                     ▶ View Abstract & Extracted Conclusion
                 </summary>
-                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.06);">
+                <div style="margin-top: 15px; font-size: 0.95rem; color: #4A5568; line-height: 1.7; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.06);">
                     <p style="margin-bottom: 15px;">{clean_abstract}</p>
                     <div style="background: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0; border: 1px solid rgba(0,0,0,0.05); border-left-width: 4px;">
                         <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block;">Extracted Conclusion</strong>
@@ -423,8 +431,8 @@ with tabs[7]:
                 news_card = f"""
                 <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid #D8B4FE; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
                     <div style="font-size: 0.8rem; font-weight: 800; color: #D8B4FE; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
-                    <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
-                    <div style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Published: {d}</div>
+                    <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #1E293B; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
+                    <div style="font-size: 0.9rem; color: #718096; font-weight: 500;">Published: {d}</div>
                 </div>
                 """
                 st.markdown(news_card.replace('\n', ''), unsafe_allow_html=True)
