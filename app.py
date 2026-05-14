@@ -1,31 +1,50 @@
 import streamlit as st
 import requests
 import feedparser
-import pandas as pd
 from datetime import datetime, timedelta
+import time
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(page_title="Lab Literature Dashboard", page_icon="🧬", layout="wide")
+st.set_page_config(
+    page_title="Lab Literature Dashboard", 
+    page_icon="🧬", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
-# Custom CSS for a sleeker look
+# --- MINIMAL CSS FOR TYPOGRAPHY (Respects Light/Dark Mode) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #f8f9fa; }
-    .paper-title { font-size: 1.2rem; font-weight: 600; color: #1e3d59; margin-bottom: 0px;}
-    .paper-meta { font-size: 0.9rem; color: #6c757d; margin-bottom: 10px;}
-    .news-title { font-size: 1.1rem; font-weight: 600; color: #d9534f; margin-bottom: 0px;}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+    .main-header {
+        font-size: 2.2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0px;
+        padding-top: 10px;
+    }
+    .sub-header {
+        font-size: 1.1rem;
+        font-weight: 400;
+        color: gray;
+        text-align: center;
+        margin-bottom: 30px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATA FETCHING FUNCTIONS ---
+# --- ROBUST DATA FETCHING ---
 
-@st.cache_data(ttl=43200) # Cache data for 12 hours
+@st.cache_data(ttl=43200, show_spinner=False)
 def fetch_papers(topic_query, days_back=7):
-    """Fetches recent papers from Europe PMC (covers PubMed, bioRxiv, etc.)"""
+    """Fetches and sorts recent papers from Europe PMC with strict error handling."""
     date_from = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
     date_to = datetime.now().strftime('%Y-%m-%d')
     
-    # Constructing the Europe PMC query
     full_query = f'({topic_query}) AND FIRST_PDATE:[{date_from} TO {date_to}]'
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
     
@@ -33,115 +52,137 @@ def fetch_papers(topic_query, days_back=7):
         'query': full_query,
         'format': 'json',
         'resultType': 'core',
-        'pageSize': 15  # Limit to top 15 most recent/relevant per category
+        'pageSize': 25 
     }
     
     try:
-        response = requests.get(url, params=params)
+        # Added a strict 10-second timeout to prevent infinite hangs
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-        data = response.json()
-        return data.get('resultList', {}).get('result', [])
-    except Exception as e:
-        st.error(f"Error fetching literature: {e}")
+        papers = response.json().get('resultList', {}).get('result', [])
+        
+        # Sort chronologically, handling missing dates safely
+        return sorted(papers, key=lambda x: x.get('firstPublicationDate', '1900-01-01'), reverse=True)
+    
+    except requests.exceptions.RequestException as e:
+        st.error(f"API Connection Error: Could not retrieve literature. ({e})")
         return []
 
-@st.cache_data(ttl=43200)
+@st.cache_data(ttl=43200, show_spinner=False)
 def fetch_news():
-    """Fetches biotech industry news from RSS feeds."""
+    """Fetches and sorts biotech industry news with bulletproof date parsing."""
     feeds = {
         "Fierce Biotech": "https://www.fiercebiotech.com/rss/xml",
-        "Endpoints News": "https://endpts.com/feed/",
-        "Google News (SynBio & AAV)": "https://news.google.com/rss/search?q=biotech+AND+(AAV+OR+%22synthetic+biology%22+OR+%22gene+therapy%22)&hl=en-US&gl=US&ceid=US:en"
+        "Endpoints News": "https://endpts.com/feed/"
     }
     
     news_items = []
     for source, url in feeds.items():
         try:
             parsed = feedparser.parse(url)
-            # Grab top 5 articles from each feed
-            for entry in parsed.entries[:5]:
+            for entry in parsed.entries[:6]:
+                # Bulletproof date extraction
+                dt = datetime.now() # Fallback
+                if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                    try:
+                        dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                    except (TypeError, OverflowError):
+                        pass # Keep the fallback
+                
                 news_items.append({
                     'source': source,
-                    'title': entry.get('title', 'No Title'),
+                    'title': entry.get('title', 'Untitled Article'),
                     'link': entry.get('link', '#'),
-                    'published': entry.get('published', 'Recent')
+                    'published_str': dt.strftime('%b %d, %Y'),
+                    'date_obj': dt
                 })
-        except Exception as e:
-            st.error(f"Error fetching news from {source}: {e}")
+        except Exception:
+            pass # Silently continue if one feed fails, protecting the overall UI
             
-    return news_items
+    # Sort chronologically (Newest first)
+    return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
 # --- QUERIES ---
-# Group 1: AAV specific
-query_aav = '"AAV" OR "adeno-associated virus" OR "AAV engineering" OR "AAV capsid"'
-
-# Group 2: Synthetic Gene Circuits & Logic (Constrained to biology to avoid CS papers)
 query_circuits = '("synthetic gene circuit" OR "synthetic biology" OR "genetic circuit") AND ("AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "cancer")'
-
-# Group 3: HCC & Immunotherapy
+query_aav = '"AAV" OR "adeno-associated virus" OR "AAV engineering" OR "AAV capsid"'
 query_hcc = '"hepatocellular carcinoma" AND "immunotherapy"'
 
+# --- MAIN UI ---
+st.markdown("<div class='main-header'>Lab Literature Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Real-time curation of high-impact publications and industry intelligence.</div>", unsafe_allow_html=True)
 
-# --- UI LAYOUT ---
-st.title("🧬 Lab Literature & Industry Dashboard")
-st.markdown("Automated daily retrieval of publications, preprints, and biotech news.")
-
-# Sidebar controls
+# Sidebar
 with st.sidebar:
-    st.header("⚙️ Settings")
-    days_to_fetch = st.slider("Days of Literature to Fetch", min_value=1, max_value=30, value=7)
-    if st.button("🔄 Refresh Data Now"):
+    st.markdown("### ⚙️ Engine Parameters")
+    days_to_fetch = st.slider("Timeframe (Days)", min_value=1, max_value=30, value=7)
+    
+    st.markdown("---")
+    if st.button("🔄 Force Data Refresh", use_container_width=True):
         st.cache_data.clear()
+        st.rerun()
+    st.caption("Cache auto-refreshes every 12 hours.")
 
-# Tabs for organization
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🧬 Synthetic Circuits & Logic", 
-    "🦠 AAV Engineering", 
-    "🔬 HCC & Immunotherapy", 
-    "📈 Industry News"
-])
-
+# --- RENDERING LOGIC ---
 def render_papers(papers):
     if not papers:
-        st.info("No recent papers found for this topic in the selected timeframe.")
+        st.info("No publications met the criteria in the selected timeframe.")
         return
         
     for p in papers:
         title = p.get('title', 'Unknown Title')
-        journal = p.get('journalTitle', p.get('bookOrReportDetails', {}).get('publisher', 'Preprint/Unknown'))
+        journal = p.get('journalTitle', p.get('bookOrReportDetails', {}).get('publisher', 'Preprint / Repository'))
         date = p.get('firstPublicationDate', 'Unknown Date')
         authors = p.get('authorString', 'Unknown Authors')
         doi = p.get('doi', '')
-        link = f"https://doi.org/{doi}" if doi else f"https://europepmc.org/article/MED/{p.get('pmid', '')}"
+        pmid = p.get('pmid', '')
         abstract = p.get('abstractText', 'No abstract available.')
         
-        st.markdown(f"<p class='paper-title'><a href='{link}' target='_blank' style='color: #1e3d59; text-decoration: none;'>{title}</a></p>", unsafe_allow_html=True)
-        st.markdown(f"<p class='paper-meta'><b>{journal}</b> | {date} | {authors}</p>", unsafe_allow_html=True)
-        with st.expander("Read Abstract"):
-            # Clean up HTML tags sometimes present in abstract text
-            st.write(abstract.replace("<i>", "").replace("</i>", "").replace("<b>", "").replace("</b>", ""))
-        st.divider()
+        # Robust Link Generation
+        if doi:
+            link = f"https://doi.org/{doi}"
+        elif pmid:
+            link = f"https://europepmc.org/article/MED/{pmid}"
+        else:
+            link = f"https://europepmc.org/search?query={title.replace(' ', '+')}"
 
-# Render Tabs
-with tab1:
-    st.subheader("Synthetic Gene Circuits & Boolean Logic in Cancer")
-    render_papers(fetch_papers(query_circuits, days_to_fetch))
+        clean_abstract = abstract.replace("<i>", "").replace("</i>", "").replace("<b>", "").replace("</b>", "")
 
-with tab2:
-    st.subheader("AAV Engineering & Delivery")
-    render_papers(fetch_papers(query_aav, days_to_fetch))
+        # Native Streamlit Card Container
+        with st.container(border=True):
+            st.markdown(f"#### [{title}]({link})")
+            st.markdown(f"**{journal}** &nbsp;|&nbsp; {date} &nbsp;|&nbsp; _{authors}_")
+            
+            with st.expander("View Abstract & Insights"):
+                st.write(clean_abstract)
+                st.markdown(f"[🔗 Direct Link to Source]({link})")
 
-with tab3:
-    st.subheader("Hepatocellular Carcinoma & Immunotherapy")
-    render_papers(fetch_papers(query_hcc, days_to_fetch))
+# --- TABBED NAVIGATION ---
+t_circuits, t_aav, t_hcc, t_news = st.tabs([
+    "🧬 SynBio & Logic Circuits", 
+    "🦠 AAV Engineering", 
+    "🔬 HCC Immunotherapy", 
+    "📈 Industry News"
+])
 
-with tab4:
-    st.subheader("Biotech Industry & Startup News")
-    news = fetch_news()
-    if not news:
-        st.info("No news fetched.")
-    else:
-        for item in news:
-            st.markdown(f"<p class='news-title'><a href='{item['link']}' target='_blank' style='color: #d9534f; text-decoration: none;'>{item['title']}</a></p>", unsafe_allow_html=True)
-            st.markdown(f"<p class='paper-meta'><b>{item['source']}</b> | {item['published']}</p>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+with t_circuits:
+    with st.spinner('Querying Database...'):
+        render_papers(fetch_papers(query_circuits, days_to_fetch))
+
+with t_aav:
+    with st.spinner('Querying Database...'):
+        render_papers(fetch_papers(query_aav, days_to_fetch))
+
+with t_hcc:
+    with st.spinner('Querying Database...'):
+        render_papers(fetch_papers(query_hcc, days_to_fetch))
+
+with t_news:
+    with st.spinner('Aggregating Feeds...'):
+        news = fetch_news()
+        if not news:
+            st.info("No industry news available at this time.")
+        else:
+            for item in news:
+                with st.container(border=True):
+                    st.markdown(f"#### [{item['title']}]({item['link']})")
+                    st.markdown(f"**{item['source']}** &nbsp;|&nbsp; Published: {item['published_str']}")
