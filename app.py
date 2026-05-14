@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import time
 import re
 import html
-import pandas as pd
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -18,13 +17,13 @@ st.set_page_config(
 # --- ADVANCED UI/UX & GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
     
-    /* Animated Mesh Gradient Background */
+    /* Animated Mesh Gradient Background for the App */
     @keyframes mesh {
         0% { background-position: 0% 0%; }
         50% { background-position: 100% 100%; }
@@ -42,32 +41,75 @@ st.markdown("""
         background-attachment: fixed;
     }
     
-    /* Glassmorphism Hero Banner */
-    .hero-banner {
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        padding: 45px 30px;
-        border-radius: 16px;
-        text-align: center;
-        margin-bottom: 40px;
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Dynamic Premium Hero Banner */
+    @keyframes orbitGlow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
-    
+    .hero-banner {
+        position: relative;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        padding: 55px 40px;
+        border-radius: 24px;
+        text-align: center;
+        margin-bottom: 45px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -100%; left: -100%; width: 300%; height: 300%;
+        background: radial-gradient(circle at 50% 50%, rgba(0, 210, 182, 0.12) 0%, transparent 40%),
+                    radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%);
+        animation: orbitGlow 25s linear infinite;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
     .hero-title {
-        font-size: 2.8rem;
+        font-size: 3rem;
         font-weight: 800;
-        margin-bottom: 12px;
+        margin-bottom: 15px;
         letter-spacing: -0.04em;
-        background: linear-gradient(to right, #ffffff, #94a3b8);
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     .hero-subtitle {
-        font-size: 1.15rem;
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: #94a3b8;
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+    
+    /* Elegant "Created by" Badge */
+    .creator-badge {
+        display: inline-block;
+        margin-top: 25px;
+        padding: 8px 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 30px;
+        font-size: 0.85rem;
+        color: #64748b;
         font-weight: 500;
-        color: #cbd5e1;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+    }
+    .creator-badge span {
+        color: #00D2B6;
+        font-weight: 700;
     }
 
     /* Center Tabs & Styling */
@@ -168,7 +210,7 @@ def fetch_news():
                     except: pass 
                 news_items.append({
                     'source': source,
-                    'title': strip_tags(entry.get('title', 'Untitled')), # Uses new deep-cleaning function
+                    'title': strip_tags(entry.get('title', 'Untitled')),
                     'link': entry.get('link', '#'),
                     'published_str': dt.strftime('%b %d, %Y'),
                     'date_obj': dt
@@ -187,11 +229,14 @@ queries = {
     "HCC": '"hepatocellular carcinoma" AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint")'
 }
 
-# --- HEADER UI ---
+# --- DYNAMIC HEADER UI ---
 st.markdown("""
 <div class="hero-banner">
-    <div class="hero-title">Lab Literature Dashboard</div>
-    <div class="hero-subtitle">Real-time curation of relevant publications, preprints, and industry news.</div>
+    <div class="hero-content">
+        <div class="hero-title">Lab Literature Dashboard</div>
+        <div class="hero-subtitle">Real-time curation of relevant publications, preprints, and industry news.</div>
+        <div class="creator-badge">Created by <span>Dylan</span></div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -221,8 +266,8 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- RENDERING LOGIC & CSV EXPORT ---
-def render_papers(all_papers, lit_type, target_journals, category_name):
+# --- RENDERING LOGIC ---
+def render_papers(all_papers, lit_type, target_journals):
     filtered_papers = []
     
     for p in all_papers:
@@ -240,28 +285,6 @@ def render_papers(all_papers, lit_type, target_journals, category_name):
     if not filtered_papers:
         st.warning("No publications met the criteria. Try broadening your timeframe or clearing filters.")
         return
-        
-    # Generate CSV Data for Export
-    csv_data = []
-    for p in filtered_papers:
-        csv_data.append({
-            "Title": p.get('title', 'Unknown'),
-            "Journal": get_journal_name(p),
-            "Date": p.get('firstPublicationDate', ''),
-            "Authors": p.get('authorString', ''),
-            "DOI": p.get('doi', ''),
-            "Citations": p.get('citedByCount', 0)
-        })
-    df = pd.DataFrame(csv_data)
-    
-    col1, col2 = st.columns([8, 2])
-    with col2:
-        st.download_button(label=f"📥 Download {len(filtered_papers)} Papers (CSV)", 
-                           data=df.to_csv(index=False).encode('utf-8'), 
-                           file_name=f"{category_name}_literature.csv", 
-                           mime='text/csv')
-    
-    st.markdown("<br>", unsafe_allow_html=True)
 
     for p in filtered_papers:
         title = safe_text(p.get('title', 'Unknown Title'))
@@ -317,28 +340,28 @@ def render_papers(all_papers, lit_type, target_journals, category_name):
 tabs = st.tabs([
     "🧬 SynBio", 
     "🧮 Logic Circuits", 
-    "🦠 AAV Engineering", 
-    "🏭 CMC & Manufacturing", 
-    "💉 Non-Viral Delivery", 
+    "🦠 AAV Eng", 
+    "🏭 CMC & Mfg", 
+    "💉 Non-Viral", 
     "🔬 Viral Delivery", 
     "🎯 HCC", 
     "📈 Industry News"
 ])
 
 tab_mapping = [
-    (tabs[0], queries["SynBio"], "SynBio"),
-    (tabs[1], queries["Logic"], "Logic_Circuits"),
-    (tabs[2], queries["AAV"], "AAV_Engineering"),
-    (tabs[3], queries["CMC"], "CMC_Manufacturing"),
-    (tabs[4], queries["NonViral"], "NonViral_Delivery"),
-    (tabs[5], queries["ViralBroad"], "Viral_Delivery"),
-    (tabs[6], queries["HCC"], "HCC_Immunotherapy")
+    (tabs[0], queries["SynBio"]),
+    (tabs[1], queries["Logic"]),
+    (tabs[2], queries["AAV"]),
+    (tabs[3], queries["CMC"]),
+    (tabs[4], queries["NonViral"]),
+    (tabs[5], queries["ViralBroad"]),
+    (tabs[6], queries["HCC"])
 ]
 
-for tab, query, name in tab_mapping:
+for tab, query in tab_mapping:
     with tab:
         with st.spinner('Querying EuropePMC...'):
-            render_papers(fetch_papers(query, days_to_fetch, open_access_only), literature_filter, selected_journals, name)
+            render_papers(fetch_papers(query, days_to_fetch, open_access_only), literature_filter, selected_journals)
 
 with tabs[7]:
     with st.spinner('Aggregating RSS Feeds...'):
