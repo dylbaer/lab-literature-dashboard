@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED UI/UX & BIOLUMINESCENT GLASSMORPHISM CSS ---
+# --- ADVANCED UI/UX & DEEP BIO GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -30,92 +30,84 @@ st.markdown("""
         100% { background-position: 0% 0%; }
     }
     .stApp {
-        background-color: #f1f5f9;
+        background-color: #f8fafc;
         background-image: 
-            radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-            radial-gradient(at 90% 10%, rgba(0, 210, 182, 0.15) 0px, transparent 50%),
-            radial-gradient(at 30% 80%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
-            radial-gradient(at 80% 90%, rgba(14, 165, 233, 0.12) 0px, transparent 50%);
+            radial-gradient(at 10% 20%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+            radial-gradient(at 90% 10%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+            radial-gradient(at 30% 80%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+            radial-gradient(at 80% 90%, rgba(20, 184, 166, 0.08) 0px, transparent 50%);
         background-size: 200% 200%;
         animation: mesh 25s ease infinite;
         background-attachment: fixed;
     }
     
-    /* --- THE BIOLUMINESCENT HERO BANNER --- */
+    /* --- THE PREMIUM DEEP-BIO HERO BANNER --- */
     
     @keyframes floatOrb1 {
         0% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(30px, -50px) scale(1.1); }
-        66% { transform: translate(-20px, 20px) scale(0.9); }
+        33% { transform: translate(30px, -50px) scale(1.05); }
+        66% { transform: translate(-20px, 20px) scale(0.95); }
         100% { transform: translate(0, 0) scale(1); }
     }
     @keyframes floatOrb2 {
         0% { transform: translate(0, 0) scale(1); }
-        33% { transform: translate(-40px, 30px) scale(1.2); }
-        66% { transform: translate(20px, -20px) scale(0.8); }
+        33% { transform: translate(-40px, 30px) scale(1.1); }
+        66% { transform: translate(20px, -20px) scale(0.9); }
         100% { transform: translate(0, 0) scale(1); }
-    }
-    @keyframes borderGlow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
     }
 
     .hero-wrapper {
         position: relative;
         margin-bottom: 50px;
-        border-radius: 26px;
-        padding: 2px; /* Acts as the iridescent border thickness */
-        background: linear-gradient(90deg, #00F0FF, #7000FF, #FF007F, #00D2B6);
-        background-size: 300% 300%;
-        animation: borderGlow 8s ease infinite;
-        box-shadow: 0 25px 50px -12px rgba(112, 0, 255, 0.3);
+        border-radius: 24px;
+        padding: 1px; /* Subtle silver border */
+        background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+        box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15);
         overflow: hidden;
     }
 
-    /* The glowing orbs behind the glass */
+    /* Elegant, deep biological glowing orbs */
     .hero-wrapper::before, .hero-wrapper::after {
         content: '';
         position: absolute;
         filter: blur(60px);
         z-index: 1;
-        opacity: 0.8;
+        opacity: 0.85;
     }
     .hero-wrapper::before {
-        width: 400px; height: 400px;
-        background: #00F0FF; /* Neon Cyan */
-        top: -100px; left: -100px;
-        animation: floatOrb1 12s infinite ease-in-out;
+        width: 500px; height: 500px;
+        background: #0ea5e9; /* Deep Sapphire Blue */
+        top: -150px; left: -100px;
+        animation: floatOrb1 18s infinite ease-in-out;
     }
     .hero-wrapper::after {
-        width: 500px; height: 500px;
-        background: #FF007F; /* Magenta */
-        bottom: -150px; right: -100px;
-        animation: floatOrb2 15s infinite ease-in-out;
+        width: 600px; height: 600px;
+        background: #10b981; /* Emerald Green */
+        bottom: -200px; right: -150px;
+        animation: floatOrb2 22s infinite ease-in-out;
     }
-    /* Third orb for deep ultraviolet depth */
     .hero-inner-orb {
         position: absolute;
-        width: 300px; height: 300px;
-        background: #7000FF; /* Ultraviolet */
-        top: 20%; left: 40%;
-        filter: blur(50px);
+        width: 400px; height: 400px;
+        background: #14b8a6; /* Soft Teal */
+        top: 10%; left: 35%;
+        filter: blur(55px);
         z-index: 1;
-        animation: floatOrb1 18s infinite ease-in-out reverse;
+        animation: floatOrb1 20s infinite ease-in-out reverse;
     }
 
-    /* The actual frosted glass card */
+    /* The frosted glass card */
     .hero-banner {
         position: relative;
-        background: rgba(10, 15, 30, 0.4); /* Very dark, very transparent to let colors bleed through */
-        backdrop-filter: blur(40px) saturate(160%);
-        -webkit-backdrop-filter: blur(40px) saturate(160%);
-        padding: 65px 40px;
-        border-radius: 24px;
+        background: rgba(15, 23, 42, 0.75); /* Deep slate base */
+        backdrop-filter: blur(40px) saturate(120%);
+        -webkit-backdrop-filter: blur(40px) saturate(120%);
+        padding: 60px 40px;
+        border-radius: 23px;
         text-align: center;
         z-index: 2;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -1px 1px rgba(0,0,0,0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.15);
     }
     
     .hero-title {
@@ -124,37 +116,35 @@ st.markdown("""
         margin-bottom: 12px;
         letter-spacing: -0.03em;
         color: #ffffff;
-        text-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 40px rgba(0, 240, 255, 0.3);
+        text-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
     .hero-subtitle {
         font-size: 1.25rem;
         font-weight: 400;
-        color: #e2e8f0;
+        color: #cbd5e1;
         max-width: 750px;
         margin: 0 auto;
         line-height: 1.6;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     
-    /* Neon Pill Badge */
+    /* Clean "Created by" Badge */
     .creator-badge {
         display: inline-block;
         margin-top: 30px;
         padding: 8px 24px;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(0, 240, 255, 0.4);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 30px;
         font-size: 0.9rem;
-        color: #cbd5e1;
+        color: #e2e8f0;
         font-weight: 500;
         letter-spacing: 1px;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(10px);
     }
     .creator-badge span {
-        color: #00F0FF; /* Glowing Cyan */
-        font-weight: 800;
-        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        color: #38bdf8; /* Soft Sky Blue */
+        font-weight: 700;
     }
 
     /* Center Tabs & Styling */
@@ -167,10 +157,10 @@ st.markdown("""
         font-size: 1.05rem !important;
         font-weight: 600 !important;
         padding-bottom: 15px !important;
-        color: #475569 !important;
+        color: #64748b !important;
     }
     div[data-baseweb="tab"][aria-selected="true"] {
-        color: #0F172A !important;
+        color: #0f172a !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -213,7 +203,7 @@ def get_card_theme(journal_name, is_preprint):
     elif "new england" in j_lower or "nejm" in j_lower:
         return {"bg": "rgba(238, 242, 255, 0.65)", "solid": "#4F46E5", "text": "#312E81", "label": "CLINICAL"}
     else:
-        return {"bg": "rgba(255, 255, 255, 0.65)", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"}
+        return {"bg": "rgba(255, 255, 255, 0.8)", "solid": "#64748B", "text": "#1E293B", "label": "PEER-REVIEWED"}
 
 # --- ROBUST DATA FETCHING ---
 
@@ -262,15 +252,15 @@ def fetch_news():
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
-# --- HIGHLY TARGETED QUERIES ---
+# --- EXPANDED HIGHLY TARGETED QUERIES ---
 queries = {
-    "SynBio": '"synthetic biology" OR "synthetic gene circuit" OR "genetic circuit"',
-    "Logic": '("AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic") AND ("synthetic biology" OR "cell" OR "gene" OR "cancer")',
-    "AAV": '"AAV" OR "adeno-associated virus" OR "AAV capsid"',
-    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up")',
-    "NonViral": '"LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "exosome"',
-    "ViralBroad": '"viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus"',
-    "HCC": '"hepatocellular carcinoma" AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint")'
+    "SynBio": '("synthetic biology" OR "synthetic gene circuit" OR "genetic circuit" OR "synthetic genome")',
+    "Logic": '("AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate") AND ("synthetic biology" OR "cell" OR "gene" OR "cancer")',
+    "AAV": '("AAV" OR "adeno-associated virus" OR "AAV capsid" OR "AAV engineering" OR "directed evolution AAV")',
+    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing" OR "bioreactor")',
+    "NonViral": '("LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "exosome" OR "liposome" OR "cell-penetrating peptide" OR "VLP" OR "virus-like particle" OR "gold nanoparticle" OR "polyplex")',
+    "ViralBroad": '("viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus" OR "baculovirus")',
+    "HCC": '("hepatocellular carcinoma" OR "HCC") AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint" OR "T-cell therapy")'
 }
 
 # --- DYNAMIC HERO UI INJECTION ---
@@ -304,7 +294,8 @@ with st.sidebar:
     )
     
     st.markdown("<br>", unsafe_allow_html=True)
-    days_to_fetch = st.slider("Timeframe (Days)", min_value=7, max_value=90, value=30, step=7) 
+    # Adjusted slider range and defaults per user request
+    days_to_fetch = st.slider("Timeframe (Days)", min_value=1, max_value=30, value=7, step=1) 
     
     st.markdown("---")
     if st.button("🔄 Force Data Refresh", use_container_width=True):
@@ -354,17 +345,17 @@ def render_papers(all_papers, lit_type, target_journals):
             badges_html += f"""<span style="background-color: #DEF7EC; color: #03543F; border: 1px solid #31C48D; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; margin-right: 10px;">🔓 Open Access</span>"""
 
         html_card = f"""
-        <div style="background: {theme['bg']}; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); border-left: 8px solid {theme['solid']}; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);">
+        <div style="background: {theme['bg']}; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 8px solid {theme['solid']}; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);">
             <div style="display: flex; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 {badges_html}
             </div>
-            <a href="{link}" target="_blank" style="font-size: 1.3rem; font-weight: 800; color: #0F172A; text-decoration: none; display: block; margin-bottom: 10px; line-height: 1.4;">
+            <a href="{link}" target="_blank" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; text-decoration: none; display: block; margin-bottom: 10px; line-height: 1.4;">
                 {title}
             </a>
             <div style="font-size: 0.95rem; color: #475569; margin-bottom: 18px;">
                 <strong>{date}</strong> &nbsp;|&nbsp; 📊 Citations: {citations} &nbsp;|&nbsp; <i>{authors}</i>
             </div>
-            <details style="cursor: pointer; outline: none; background: rgba(255,255,255,0.9); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <details style="cursor: pointer; outline: none; background: rgba(255,255,255,0.95); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
                 <summary style="font-size: 0.95rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
                     ▶ View Abstract & Extracted Conclusion
                 </summary>
@@ -382,7 +373,7 @@ def render_papers(all_papers, lit_type, target_journals):
 
 # --- EXPANDED TABBED NAVIGATION ---
 tabs = st.tabs([
-    "🧬 SynBio", 
+    "🧬 Synthetic Biology", 
     "🧮 Logic Circuits", 
     "🦠 AAV Engineering", 
     "🏭 CMC & Manufacturing", 
@@ -420,10 +411,10 @@ with tabs[7]:
                 l = item['link']
                 
                 news_card = f"""
-                <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.9); border-left: 6px solid #4F46E5; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-                    <div style="font-size: 0.8rem; font-weight: 800; color: #4F46E5; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
-                    <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
-                    <div style="font-size: 0.9rem; color: #64748B; font-weight: 500;">Published: {d}</div>
+                <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid #0ea5e9; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #0ea5e9; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
+                    <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
+                    <div style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Published: {d}</div>
                 </div>
                 """
                 st.markdown(news_card.replace('\n', ''), unsafe_allow_html=True)
