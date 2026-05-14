@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED UI/UX & DEEP BIO GLASSMORPHISM CSS ---
+# --- ADVANCED UI/UX & EXTREME PASTEL GLASSMORPHISM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -23,25 +23,25 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Animated Mesh Gradient Background for the App */
+    /* Animated Mesh Gradient Background for the App (Softened Pastels) */
     @keyframes mesh {
         0% { background-position: 0% 0%; }
         50% { background-position: 100% 100%; }
         100% { background-position: 0% 0%; }
     }
     .stApp {
-        background-color: #f8fafc;
+        background-color: #fdfcfd; /* Very faint pinkish white */
         background-image: 
-            radial-gradient(at 10% 20%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
-            radial-gradient(at 90% 10%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
-            radial-gradient(at 30% 80%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-            radial-gradient(at 80% 90%, rgba(20, 184, 166, 0.08) 0px, transparent 50%);
+            radial-gradient(at 10% 20%, rgba(216, 180, 254, 0.1) 0px, transparent 50%), /* Pastel Purple */
+            radial-gradient(at 90% 10%, rgba(249, 168, 212, 0.12) 0px, transparent 50%), /* Pastel Pink */
+            radial-gradient(at 30% 80%, rgba(224, 231, 255, 0.1) 0px, transparent 50%), /* Pastel Indigo */
+            radial-gradient(at 80% 90%, rgba(253, 226, 243, 0.1) 0px, transparent 50%); /* Soft Peach */
         background-size: 200% 200%;
         animation: mesh 25s ease infinite;
         background-attachment: fixed;
     }
     
-    /* --- THE PREMIUM DEEP-BIO HERO BANNER --- */
+    /* --- THE EXTREME PASTEL GLASSMORPHISM HERO BANNER --- */
     
     @keyframes floatOrb1 {
         0% { transform: translate(0, 0) scale(1); }
@@ -55,99 +55,110 @@ st.markdown("""
         66% { transform: translate(20px, -20px) scale(0.9); }
         100% { transform: translate(0, 0) scale(1); }
     }
+    @keyframes borderGlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
     .hero-wrapper {
         position: relative;
         margin-bottom: 50px;
-        border-radius: 24px;
-        padding: 1px; /* Subtle silver border */
-        background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
-        box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15);
+        border-radius: 26px;
+        padding: 1px; /* The extreme glass edge */
+        /* Pastel Iridescent Border */
+        background: linear-gradient(90deg, #F9A8D4, #D8B4FE, #FDF2F8, #F9A8D4);
+        background-size: 300% 300%;
+        animation: borderGlow 8s ease infinite;
+        box-shadow: 0 25px 60px -10px rgba(216, 180, 254, 0.4), 0 10px 20px -5px rgba(249, 168, 212, 0.2);
         overflow: hidden;
     }
 
-    /* Elegant, deep biological glowing orbs */
+    /* Pastel glowing orbs behind the extreme glass */
     .hero-wrapper::before, .hero-wrapper::after {
         content: '';
         position: absolute;
-        filter: blur(60px);
+        filter: blur(70px);
         z-index: 1;
-        opacity: 0.85;
+        opacity: 0.9;
     }
     .hero-wrapper::before {
         width: 500px; height: 500px;
-        background: #0ea5e9; /* Deep Sapphire Blue */
+        background: #F9A8D4; /* Cotton Candy Pink */
         top: -150px; left: -100px;
-        animation: floatOrb1 18s infinite ease-in-out;
+        animation: floatOrb1 15s infinite ease-in-out;
     }
     .hero-wrapper::after {
         width: 600px; height: 600px;
-        background: #10b981; /* Emerald Green */
+        background: #D8B4FE; /* Bright Lavender */
         bottom: -200px; right: -150px;
-        animation: floatOrb2 22s infinite ease-in-out;
+        animation: floatOrb2 18s infinite ease-in-out;
     }
+    /* Inner orb for soft pastel mixing */
     .hero-inner-orb {
         position: absolute;
         width: 400px; height: 400px;
-        background: #14b8a6; /* Soft Teal */
+        background: #FDF2F8; /* Pale Pink White */
         top: 10%; left: 35%;
-        filter: blur(55px);
+        filter: blur(60px);
         z-index: 1;
         animation: floatOrb1 20s infinite ease-in-out reverse;
     }
 
-    /* The frosted glass card */
+    /* The actual EXTREME FROSTED GLASS card */
     .hero-banner {
         position: relative;
-        background: rgba(15, 23, 42, 0.75); /* Deep slate base */
-        backdrop-filter: blur(40px) saturate(120%);
-        -webkit-backdrop-filter: blur(40px) saturate(120%);
-        padding: 60px 40px;
-        border-radius: 23px;
+        /* Ultra Light, Ultra Translucent base for extreme refraction */
+        background: rgba(255, 255, 255, 0.1); 
+        backdrop-filter: blur(50px) saturate(190%);
+        -webkit-backdrop-filter: blur(50px) saturate(190%);
+        padding: 70px 40px;
+        border-radius: 24px;
         text-align: center;
         z-index: 2;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: inset 0 1px 1px rgba(255,255,255,0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        /* Highlights mimicking heavy acrylic edges */
+        box-shadow: inset 0 2px 2px rgba(255,255,255,0.4), inset 0 -2px 2px rgba(0,0,0,0.02);
     }
     
     .hero-title {
-        font-size: 3.2rem;
+        font-size: 3.3rem;
         font-weight: 800;
         margin-bottom: 12px;
-        letter-spacing: -0.03em;
-        color: #ffffff;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        letter-spacing: -0.04em;
+        color: #1E293B; /* Deep Indigo Slate for perfect legibility against light glass */
+        text-shadow: 0 4px 10px rgba(255,255,255,0.8), 0 0 20px rgba(216, 180, 254, 0.2);
     }
     .hero-subtitle {
         font-size: 1.25rem;
         font-weight: 400;
-        color: #cbd5e1;
+        color: #475569;
         max-width: 750px;
         margin: 0 auto;
         line-height: 1.6;
     }
     
-    /* Clean "Created by" Badge */
+    /* Clean "Made by" Badge - Pastel Theme */
     .creator-badge {
         display: inline-block;
         margin-top: 30px;
         padding: 8px 24px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(216, 180, 254, 0.5);
         border-radius: 30px;
         font-size: 0.9rem;
-        color: #e2e8f0;
+        color: #64748b;
         font-weight: 500;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 15px rgba(216, 180, 254, 0.1);
         backdrop-filter: blur(10px);
     }
     .creator-badge span {
-        color: #38bdf8; /* Soft Sky Blue */
+        color: #D8B4FE; /* Bright Lavender */
         font-weight: 700;
     }
 
-    /* Center Tabs & Styling */
+    /* Center Tabs & Styling ( Respecting light theme ) */
     div[data-baseweb="tab-list"] {
         justify-content: center !important;
         gap: 15px;
@@ -160,7 +171,7 @@ st.markdown("""
         color: #64748b !important;
     }
     div[data-baseweb="tab"][aria-selected="true"] {
-        color: #0f172a !important;
+        color: #0F172A !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -263,14 +274,14 @@ queries = {
     "HCC": '("hepatocellular carcinoma" OR "HCC") AND ("immunotherapy" OR "CAR-T" OR "immune checkpoint" OR "T-cell therapy")'
 }
 
-# --- DYNAMIC HERO UI INJECTION ---
+# --- DYNAMIC HERO UI INJECTION (PASTEL GLASS Theme) ---
 st.markdown("""
 <div class="hero-wrapper">
     <div class="hero-inner-orb"></div>
     <div class="hero-banner">
         <div class="hero-title">Lab Literature Dashboard</div>
         <div class="hero-subtitle">Real-time curation of relevant publications, preprints, and industry news.</div>
-        <div class="creator-badge">CREATED BY <span>DYLAN</span></div>
+        <div class="creator-badge">made by <span>Dylan</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -294,7 +305,6 @@ with st.sidebar:
     )
     
     st.markdown("<br>", unsafe_allow_html=True)
-    # Adjusted slider range and defaults per user request
     days_to_fetch = st.slider("Timeframe (Days)", min_value=1, max_value=30, value=7, step=1) 
     
     st.markdown("---")
@@ -411,8 +421,8 @@ with tabs[7]:
                 l = item['link']
                 
                 news_card = f"""
-                <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid #0ea5e9; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-                    <div style="font-size: 0.8rem; font-weight: 800; color: #0ea5e9; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
+                <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid #D8B4FE; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #D8B4FE; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
                     <a href="{l}" target="_blank" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
                     <div style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Published: {d}</div>
                 </div>
