@@ -15,35 +15,38 @@ st.set_page_config(
 )
 
 # --- ADVANCED UI/UX CSS INJECTION ---
-# Stripped out gimmicky animations for a highly professional, Benchling-style SaaS aesthetic.
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
-        background-color: #F8FAFC;
+    }
+    
+    /* Global App Background */
+    .stApp {
+        background-color: #F1F5F9; 
     }
     
     /* Clean, Professional Hero Banner */
     .hero-banner {
-        background: #0F172A; /* Deep slate */
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
         padding: 40px 30px;
         border-radius: 12px;
         text-align: center;
         color: white;
         margin-bottom: 40px;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
-        border: 1px solid #1E293B;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
+        border: 1px solid #334155;
     }
     .hero-title {
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 2.6rem;
+        font-weight: 800;
         margin-bottom: 10px;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.03em;
     }
     .hero-subtitle {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: 400;
         color: #94A3B8;
     }
@@ -54,7 +57,7 @@ st.markdown("""
         gap: 30px;
     }
     div[data-baseweb="tab"] {
-        font-size: 1.1rem !important;
+        font-size: 1.15rem !important;
         font-weight: 600 !important;
         padding-bottom: 15px !important;
     }
@@ -82,38 +85,32 @@ def get_journal_name(paper_data):
     return raw if raw else "Unknown Publisher"
 
 def get_card_theme(journal_name, is_preprint):
-    """Returns exact hex codes for tinted backgrounds and borders."""
+    """Returns exact hex codes for highly visible tinted backgrounds and solid borders."""
     j_lower = journal_name.lower()
     if is_preprint or "rxiv" in j_lower:
-        return {"bg": "#FFFBEB", "border": "#F59E0B", "text": "#B45309", "label": "PREPRINT"}
+        return {"bg": "#FFFBEB", "solid": "#D97706", "text": "#92400E", "label": "PREPRINT"} # Amber
     elif "nature" in j_lower:
-        return {"bg": "#ECFDF5", "border": "#10B981", "text": "#047857", "label": "NATURE PORTFOLIO"}
+        return {"bg": "#ECFDF5", "solid": "#059669", "text": "#064E3B", "label": "NATURE PORTFOLIO"} # Emerald
     elif "cell" in j_lower:
-        return {"bg": "#FEF2F2", "border": "#EF4444", "text": "#B91C1C", "label": "CELL PRESS"}
+        return {"bg": "#FEF2F2", "solid": "#DC2626", "text": "#7F1D1D", "label": "CELL PRESS"} # Red
     elif "science" in j_lower:
-        return {"bg": "#ECFEFF", "border": "#0EA5E9", "text": "#0369A1", "label": "SCIENCE MAG"}
+        return {"bg": "#F0F9FF", "solid": "#0284C7", "text": "#0C4A6E", "label": "SCIENCE MAG"} # Sky Blue
     elif "new england" in j_lower or "nejm" in j_lower:
-        return {"bg": "#EEF2FF", "border": "#6366F1", "text": "#4338CA", "label": "CLINICAL"}
+        return {"bg": "#EEF2FF", "solid": "#4F46E5", "text": "#312E81", "label": "CLINICAL"} # Indigo
     else:
-        return {"bg": "#F1F5F9", "border": "#64748B", "text": "#334155", "label": "PEER-REVIEWED"}
+        return {"bg": "#F8FAFC", "solid": "#475569", "text": "#1E293B", "label": "PEER-REVIEWED"} # Slate
 
 # --- ROBUST DATA FETCHING ---
 
 @st.cache_data(ttl=43200, show_spinner=False)
 def fetch_papers(topic_query, days_back=30):
-    """Fetches a large pool of papers; filtering happens locally to prevent API drops."""
     date_from = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
     date_to = datetime.now().strftime('%Y-%m-%d')
     
     full_query = f'({topic_query}) AND FIRST_PDATE:[{date_from} TO {date_to}]'
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
     
-    params = {
-        'query': full_query,
-        'format': 'json',
-        'resultType': 'core',
-        'pageSize': 100 # Fetch more to allow for aggressive local filtering
-    }
+    params = {'query': full_query, 'format': 'json', 'resultType': 'core', 'pageSize': 150}
     
     try:
         response = requests.get(url, params=params, timeout=15)
@@ -137,8 +134,7 @@ def fetch_news():
             for entry in parsed.entries[:8]:
                 dt = datetime.now()
                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    try:
-                        dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                    try: dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
                     except: pass 
                 news_items.append({
                     'source': source,
@@ -167,10 +163,7 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### ⚙️ Engine Parameters")
     
-    literature_filter = st.radio(
-        "Source Filter:",
-        ["All", "Peer-Reviewed Only", "Preprints Only"],
-    )
+    literature_filter = st.radio("Source Filter:", ["All", "Peer-Reviewed Only", "Preprints Only"])
     
     st.markdown("#### Journal Isolation")
     st.caption("Leave empty to search all journals.")
@@ -183,7 +176,6 @@ with st.sidebar:
     )
     
     st.markdown("<br>", unsafe_allow_html=True)
-    # Increased default to 30 days. Scientific publishing is too slow for a 7 day default on niche queries.
     days_to_fetch = st.slider("Timeframe (Days)", min_value=7, max_value=90, value=30, step=7) 
     
     st.markdown("---")
@@ -195,20 +187,15 @@ with st.sidebar:
 def render_papers(all_papers, lit_type, target_journals):
     filtered_papers = []
     
-    # Python-side filtering for bulletproof accuracy
     for p in all_papers:
         raw_journal = get_journal_name(p)
         j_lower = raw_journal.lower()
         is_preprint = p.get('pubType', '') == 'preprint' or p.get('source') == 'PPR' or "rxiv" in j_lower
         
-        # 1. Type Filter
         if lit_type == "Peer-Reviewed Only" and is_preprint: continue
         if lit_type == "Preprints Only" and not is_preprint: continue
-            
-        # 2. Journal Filter (Substring match prevents dropping "Cell Chemical Biology" when "Cell" is selected)
         if target_journals:
-            match_found = any(target.lower() in j_lower for target in target_journals)
-            if not match_found: continue
+            if not any(target.lower() in j_lower for target in target_journals): continue
             
         filtered_papers.append(p)
 
@@ -221,7 +208,6 @@ def render_papers(all_papers, lit_type, target_journals):
         raw_journal = safe_text(get_journal_name(p))
         is_preprint = p.get('pubType', '') == 'preprint' or p.get('source') == 'PPR' or "rxiv" in raw_journal.lower()
         
-        # Get Semantic Colors
         theme = get_card_theme(raw_journal, is_preprint)
         
         date = safe_text(p.get('firstPublicationDate', 'Unknown Date'))
@@ -235,33 +221,38 @@ def render_papers(all_papers, lit_type, target_journals):
         clean_abstract = safe_text(re.sub(r'<[^>]+>', '', raw_abstract))
         conclusion = safe_text(extract_conclusion(raw_abstract))
 
-        # The Ultimate UI Hack: HTML `<details>` element for perfectly tinted, unified cards.
-        st.markdown(f"""
-        <div style="background-color: {theme['bg']}; border: 1px solid {theme['border']}; border-left: 6px solid {theme['border']}; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-            <div style="font-size: 0.75rem; font-weight: 800; color: {theme['text']}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                {theme['label']} • {raw_journal}
+        # HTML injection compressed to a single line using .replace('\n', '') to prevent Streamlit Markdown bugs
+        html_card = f"""
+        <div style="background-color: {theme['bg']}; border: 1px solid #CBD5E1; border-left: 8px solid {theme['solid']}; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="background-color: {theme['solid']}; color: white; padding: 6px 14px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    {raw_journal}
+                </span>
+                <span style="font-size: 0.85rem; font-weight: 700; color: {theme['text']}; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {theme['label']}
+                </span>
             </div>
-            <a href="{link}" target="_blank" style="font-size: 1.2rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">
+            <a href="{link}" target="_blank" style="font-size: 1.35rem; font-weight: 800; color: #0F172A; text-decoration: none; display: block; margin-bottom: 12px; line-height: 1.3;">
                 {title}
             </a>
-            <div style="font-size: 0.9rem; color: #64748B; margin-bottom: 15px;">
+            <div style="font-size: 1rem; color: #475569; margin-bottom: 20px;">
                 <strong>Published:</strong> {date} &nbsp;|&nbsp; <i>{authors}</i>
             </div>
-            
-            <details style="cursor: pointer; outline: none;">
-                <summary style="font-size: 0.95rem; font-weight: 600; color: {theme['text']}; user-select: none;">
+            <details style="cursor: pointer; outline: none; background-color: white; padding: 12px 15px; border-radius: 8px; border: 1px solid #E2E8F0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <summary style="font-size: 1rem; font-weight: 700; color: {theme['solid']}; user-select: none;">
                     ▶ View Abstract & Extracted Conclusion
                 </summary>
-                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.6; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.05);">
-                    <p>{clean_abstract}</p>
-                    <div style="background-color: rgba(255,255,255,0.7); border-left: 3px solid {theme['border']}; padding: 12px; margin-top: 15px; border-radius: 0 6px 6px 0;">
-                        <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase;">Extracted Conclusion</strong><br>
+                <div style="margin-top: 15px; font-size: 0.95rem; color: #334155; line-height: 1.7; padding-top: 15px; border-top: 1px solid #E2E8F0;">
+                    <p style="margin-bottom: 20px;">{clean_abstract}</p>
+                    <div style="background-color: {theme['bg']}; border-left: 4px solid {theme['solid']}; padding: 15px; border-radius: 0 8px 8px 0;">
+                        <strong style="color: {theme['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Extracted Conclusion</strong>
                         {conclusion}
                     </div>
                 </div>
             </details>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
 
 # --- TABBED NAVIGATION ---
 t_circuits, t_aav, t_hcc, t_news = st.tabs([
@@ -294,11 +285,12 @@ with t_news:
                 s = safe_text(item['source'])
                 d = safe_text(item['published_str'])
                 l = item['link']
-                # Business News uses a sleek slate/indigo theme
-                st.markdown(f"""
-                <div style="background-color: #F8FAFC; border: 1px solid #CBD5E1; border-left: 6px solid #475569; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 8px;">INDUSTRY NEWS • {s}</div>
-                    <a href="{l}" target="_blank" style="font-size: 1.15rem; font-weight: 600; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px;">{t}</a>
-                    <div style="font-size: 0.85rem; color: #64748B;">Published: {d}</div>
+                
+                news_card = f"""
+                <div style="background-color: white; border: 1px solid #CBD5E1; border-left: 6px solid #4F46E5; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #4F46E5; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">INDUSTRY NEWS • {s}</div>
+                    <a href="{l}" target="_blank" style="font-size: 1.2rem; font-weight: 700; color: #0F172A; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{t}</a>
+                    <div style="font-size: 0.9rem; color: #64748B;">Published: {d}</div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                st.markdown(news_card.replace('\n', ''), unsafe_allow_html=True)
