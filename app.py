@@ -199,7 +199,7 @@ def fetch_news(rss_urls):
     for source, url in rss_urls.items():
         try:
             parsed = feedparser.parse(url)
-            for entry in parsed.entries[:10]:
+            for entry in parsed.entries[:15]:
                 dt = datetime.now()
                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
                     try: dt = datetime.fromtimestamp(time.mktime(entry.published_parsed))
@@ -262,7 +262,7 @@ funding_data = [
     {"Company": "Siren Biotechnology", "Amount": 20, "Percentage": "5%"} 
 ]
 
-# Historical VC trend data for Macro view
+# Macro Investment Trend Data
 macro_funding_data = pd.DataFrame({
     "Year": ["2020", "2021", "2022", "2023", "2024", "2025", "2026 (YTD)"],
     "Capital Deployed ($B)": [19.5, 22.8, 12.1, 9.5, 11.0, 13.2, 4.2]
@@ -383,7 +383,7 @@ def build_7day_summary(topic_icon, topic_name, papers):
 # --- VIEW ROUTING ---
 
 if st.session_state.current_view == "🏠 Home":
-    # Quick Portal Navigation (Clean Button Labels)
+    # Quick Portal Navigation
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("📚 Literature", use_container_width=True): change_view("📚 Literature"); st.rerun()
@@ -441,11 +441,6 @@ elif st.session_state.current_view == "💰 VC Finance":
     st.markdown("### 💰 Financial Intelligence")
     st.write("Tracking Seed, Series A-D, and venture capital raises strictly in the Gene and Cell Therapy sector.")
     
-    st.markdown("#### 📈 Macro Investment Trend: Gene & Cell Therapy")
-    st.write("Historical and projected venture capital deployment in the CGT sector ($ Billions).")
-    st.bar_chart(macro_funding_data, color="#D8B4FE")
-    st.markdown("<br>", unsafe_allow_html=True)
-
     with st.spinner("Aggregating Financial News..."):
         vc_news = fetch_news(vc_funding_feeds)
         if not vc_news: st.info("No recent funding news.")
@@ -463,6 +458,11 @@ elif st.session_state.current_view == "💰 VC Finance":
                 safe_hash = re.sub(r'[^a-zA-Z0-9]', '', item['title'])[:15]
                 if st.button("⭐ Save", key=f"save_n_{safe_hash}"): save_item(item['title'], item['link'], "Finance", item['published_str'])
             st.markdown("<div style='margin-bottom: 5px;'></div>", unsafe_allow_html=True)
+            
+    st.markdown("<br><hr style='border: 0; height: 1px; background: rgba(0,0,0,0.1); margin: 30px 0;'><br>", unsafe_allow_html=True)
+    st.markdown("#### 📈 Macro Investment Trend: Gene & Cell Therapy")
+    st.write("Historical and projected venture capital deployment tracking overall VC appetite in the CGT sector ($ Billions).")
+    st.area_chart(macro_funding_data, color="#9F7AEA")
 
 elif st.session_state.current_view == "🤺 Competitor Pipeline":
     st.markdown("### 🤺 Competitor Entity Pipeline")
