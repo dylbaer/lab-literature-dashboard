@@ -114,7 +114,7 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; display: flex; flex-direction: column;
     }
     .summary-card h4 { margin-top: 0; color: #1E293B; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 15px;}
-    .summary-card p { font-size: 0.95rem; line-height: 1.6; flex-grow: 1; }
+    .summary-card p { font-size: 0.95rem; line-height: 1.6; }
     .summary-card a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
     .summary-card a:hover { text-decoration: underline; }
     
@@ -156,7 +156,7 @@ def strip_tags(text):
 def safe_text(text): return html.escape(str(text)) if text else "N/A"
 
 def extract_conclusion(abstract_text):
-    if not abstract_text or len(abstract_text) < 50: return "No sufficient abstract text."
+    if not abstract_text or len(abstract_text) < 50: return "No sufficient abstract text available for summarization."
     clean_text = re.sub(r'<[^>]+>', '', abstract_text)
     sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', clean_text) if len(s.strip()) > 10]
     return " ".join(sentences[-2:]) if len(sentences) > 3 else clean_text
@@ -207,14 +207,14 @@ def fetch_news(rss_urls):
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
-# --- EXHAUSTIVE TARGETED QUERIES ---
+# --- EXHAUSTIVE TARGETED QUERIES (Precision Upgrades) ---
 queries = {
     "SynBio": '("synthetic biology" OR "synthetic genome")',
-    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate") AND ("gene therapy" OR "AAV" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC")',
-    "AAV": '("AAV" OR "adeno-associated virus" OR "AAV capsid" OR "directed evolution AAV")',
-    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing")',
+    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate") AND ("gene therapy" OR "adeno-associated virus" OR "AAV vector" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC")',
+    "AAV": '("adeno-associated virus" OR "AAV capsid" OR "AAV vector" OR "AAV delivery" OR "directed evolution AAV" OR ("AAV" AND "gene therapy")) NOT ("vasculitis" OR "ANCA")',
+    "CMC": '("adeno-associated virus" OR "lentivirus" OR "viral vector" OR "AAV") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing") NOT ("vasculitis" OR "ANCA")',
     "NonViral": '("LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "liposome" OR "VLP" OR "polyplex")',
-    "ViralBroad": '("viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus" OR "baculovirus")',
+    "ViralBroad": '("viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus" OR "baculovirus") NOT ("vasculitis" OR "ANCA")',
     "HCC": '("hepatocellular carcinoma" OR "HCC")',
     "Immunotherapy": '("immunotherapy" OR "CAR-T" OR "gene therapy" OR "T-cell therapy") AND ("cancer" OR "oncology")'
 }
@@ -226,32 +226,31 @@ competitor_news_feeds = {
     "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Siren+Biotechnology%22+OR+%22ArsenalBio%22)&hl=en-US&gl=US&ceid=US:en" 
 }
 
-# --- CURATED COMPETITOR PIPELINE DATABASE (Directly Sourced From Websites) ---
-# Width mapping: Discovery(10%), Preclinical(30%), Phase 1(50%), Phase 2(70%), Phase 3(90%)
+# --- CURATED COMPETITOR PIPELINE DATABASE ---
 pipeline_data = [
-    {"Company": "Trogenix", "Asset": "Lead Asset", "Modality": "SSE Vector (HSV-TK/IL-12)", "Indication": "Glioblastoma", "Width": "50%"}, # Phase 1 (Expected Q2 2026)
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Colorectal Cancer", "Width": "30%"}, # Preclinical
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "HCC", "Width": "30%"}, # Preclinical
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Lung Squamous Cell Carcinoma", "Width": "10%"}, # Discovery
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}, # Discovery
-    {"Company": "Siren Biotechnology", "Asset": "SRN-101", "Modality": "Universal AAV Immuno-Gene", "Indication": "High-Grade Glioma", "Width": "50%"}, # Phase 1 (IND cleared Jan 2026)
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "25%"}, # End of PoC
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "20%"}, # Middle of PoC
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "15%"}, # Beginning of PoC
-    {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA", "Indication": "Solid Tumors", "Width": "50%"}, # Phase 1
-    {"Company": "Strand Therapeutics", "Asset": "STX-003", "Modality": "Systemic Programmable mRNA", "Indication": "Solid Tumors", "Width": "40%"}, # IND-Enabling
-    {"Company": "Strand Therapeutics", "Asset": "STX-005", "Modality": "In vivo CAR-T mRNA", "Indication": "Autoimmune & Blood Cancers", "Width": "10%"}, # Discovery
-    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR+NOT)", "Indication": "AML", "Width": "50%"}, # Phase 1
-    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, # Preclinical
-    {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T", "Indication": "Ovarian Cancer", "Width": "50%"}, # Phase 1
-    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"} # Phase 1
+    {"Company": "Trogenix", "Asset": "Lead Asset", "Modality": "SSE Vector (HSV-TK/IL-12)", "Indication": "Glioblastoma", "Width": "50%"}, 
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Colorectal Cancer", "Width": "30%"}, 
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "HCC", "Width": "30%"}, 
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Lung Squamous Cell Carcinoma", "Width": "10%"}, 
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "SRN-101", "Modality": "Universal AAV Immuno-Gene", "Indication": "High-Grade Glioma", "Width": "50%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "25%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "20%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "15%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA", "Indication": "Solid Tumors", "Width": "50%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-003", "Modality": "Systemic Programmable mRNA", "Indication": "Solid Tumors", "Width": "40%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-005", "Modality": "In vivo CAR-T mRNA", "Indication": "Autoimmune & Blood Cancers", "Width": "10%"}, 
+    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR+NOT)", "Indication": "AML", "Width": "50%"}, 
+    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, 
+    {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T", "Indication": "Ovarian Cancer", "Width": "50%"}, 
+    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"} 
 ]
 
 funding_data = [
     {"Company": "ArsenalBio", "Amount": 325, "Percentage": "100%"}, 
     {"Company": "Senti Biosciences", "Amount": 205, "Percentage": "63%"},
     {"Company": "Strand Therapeutics", "Amount": 97, "Percentage": "30%"},
-    {"Company": "Trogenix", "Amount": 95, "Percentage": "29%"}, # £70m Series A in Oct 2025 (~$95M USD)
+    {"Company": "Trogenix", "Amount": 95, "Percentage": "29%"}, 
     {"Company": "Siren Biotechnology", "Amount": 20, "Percentage": "6%"} 
 ]
 
@@ -349,12 +348,21 @@ def build_7day_summary(topic_icon, topic_name, papers):
     
     p = papers[0]
     link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
+    raw_abstract = p.get('abstractText', '')
+    conclusion = safe_text(extract_conclusion(raw_abstract))
+    if len(conclusion) > 200: conclusion = conclusion[:197] + "..."
     
     html = f"""
     <div class='summary-card'>
         <h4>{topic_icon} {topic_name}</h4>
-        <p><strong>{len(papers)} new publications</strong> were indexed this week.<br><br>
-        Notably, <a href='{link}' target='_blank'>'{safe_text(p.get('title'))}'</a> was recently published in <i>{safe_text(get_journal_name(p))}</i>.</p>
+        <div style="flex-grow: 1;">
+            <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong>{len(papers)} new publications</strong> were indexed this week.</p>
+            <div style="background: rgba(255,255,255,0.6); padding: 15px; border-radius: 8px; border-left: 3px solid #9F7AEA;">
+                <span style="font-size: 0.75rem; font-weight: 800; color: #9F7AEA; text-transform: uppercase;">Top Highlight</span><br>
+                <a href='{link}' target='_blank' style='font-size: 0.95rem; display:block; margin-bottom: 8px; line-height: 1.3;'>{safe_text(p.get('title'))}</a>
+                <span style="font-size: 0.85rem; color: #4A5568; line-height: 1.5;"><strong>Key Finding:</strong> {conclusion}</span>
+            </div>
+        </div>
     </div>
     """
     return html
@@ -362,14 +370,14 @@ def build_7day_summary(topic_icon, topic_name, papers):
 # --- VIEW ROUTING ---
 
 if st.session_state.current_view == "🏠 Home":
-    # Quick Portal Navigation
+    # Quick Portal Navigation (Clean Button Labels)
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("📚 Jump to Literature Database", use_container_width=True): change_view("📚 Literature"); st.rerun()
+        if st.button("📚 Literature", use_container_width=True): change_view("📚 Literature"); st.rerun()
     with col2:
-        if st.button("💰 Jump to VC Finance", use_container_width=True): change_view("💰 VC Finance"); st.rerun()
+        if st.button("💰 VC Finance", use_container_width=True): change_view("💰 VC Finance"); st.rerun()
     with col3:
-        if st.button("🤺 Jump to Competitor Pipeline", use_container_width=True): change_view("🤺 Competitor Pipeline"); st.rerun()
+        if st.button("🤺 Competitor Pipeline", use_container_width=True): change_view("🤺 Competitor Pipeline"); st.rerun()
         
     st.markdown("<br>### 🗓️ 7-Day Intelligence Summary", unsafe_allow_html=True)
     
