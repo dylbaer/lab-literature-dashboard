@@ -72,8 +72,9 @@ st.markdown("""
     }
     .hero-title {
         font-size: 3.1rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.04em; color: #2D3748;
-        text-shadow: 0 2px 10px rgba(255,255,255,0.9);
+        text-shadow: 0 2px 10px rgba(255,255,255,0.9); transition: transform 0.2s;
     }
+    .hero-title:hover { transform: scale(1.01); }
     .hero-subtitle { font-size: 1.2rem; font-weight: 500; color: #4A5568; max-width: 800px; margin: 0 auto; }
     
     .creator-badge {
@@ -114,11 +115,11 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; display: flex; flex-direction: column;
     }
     .summary-card h4 { margin-top: 0; color: #1E293B; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 15px;}
-    .summary-card p { font-size: 0.95rem; line-height: 1.6; }
+    .summary-card p { font-size: 0.95rem; line-height: 1.6; flex-grow: 1; }
     .summary-card a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
     .summary-card a:hover { text-decoration: underline; }
     
-    /* Custom StrandTx Style Pipeline Tracker & Funding Chart */
+    /* Custom Pipeline Tracker & Funding Chart */
     .pipeline-grid {
         display: grid; grid-template-columns: 2.5fr 1.5fr 1.5fr 4fr; gap: 15px; align-items: center;
         background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; margin-bottom: 10px;
@@ -139,7 +140,7 @@ st.markdown("""
     
     /* Horizontal Funding Bar Chart */
     .funding-row { display: flex; align-items: center; margin-bottom: 12px; }
-    .funding-label { width: 150px; font-weight: 600; font-size: 0.9rem; color: #4A5568; }
+    .funding-label { width: 170px; font-weight: 600; font-size: 0.9rem; color: #4A5568; }
     .funding-bar-container { flex-grow: 1; background: #EDF2F7; border-radius: 8px; height: 18px; position: relative; margin: 0 15px; }
     .funding-bar { background: linear-gradient(90deg, #34D399, #10B981); height: 100%; border-radius: 8px; }
     .funding-value { width: 80px; text-align: right; font-weight: 700; font-size: 0.95rem; color: #1E293B; }
@@ -156,7 +157,7 @@ def strip_tags(text):
 def safe_text(text): return html.escape(str(text)) if text else "N/A"
 
 def extract_conclusion(abstract_text):
-    if not abstract_text or len(abstract_text) < 50: return "No sufficient abstract text available for summarization."
+    if not abstract_text or len(abstract_text) < 50: return "No sufficient abstract text."
     clean_text = re.sub(r'<[^>]+>', '', abstract_text)
     sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', clean_text) if len(s.strip()) > 10]
     return " ".join(sentences[-2:]) if len(sentences) > 3 else clean_text
@@ -223,42 +224,49 @@ vc_funding_feeds = {
     "Gene & Cell Therapy VC Deals": "https://news.google.com/rss/search?q=(%22Series+A%22+OR+%22Series+B%22+OR+%22Series+C%22+OR+%22Series+D%22+OR+%22seed+round%22+OR+%22venture+capital%22)+AND+(%22gene+therapy%22+OR+%22cell+therapy%22)&hl=en-US&gl=US&ceid=US:en" 
 }
 competitor_news_feeds = { 
-    "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Siren+Biotechnology%22+OR+%22ArsenalBio%22)&hl=en-US&gl=US&ceid=US:en" 
+    "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Siren+Biotechnology%22+OR+%22ArsenalBio%22+OR+%22Lyell+Immunopharma%22+OR+%22Obsidian+Therapeutics%22+OR+%22Outpace+Bio%22)&hl=en-US&gl=US&ceid=US:en" 
 }
 
 # --- CURATED COMPETITOR PIPELINE DATABASE ---
 pipeline_data = [
+    {"Company": "Lyell Immunopharma", "Asset": "LYL797", "Modality": "Reprogrammed CAR-T", "Indication": "TNBC / NSCLC", "Width": "50%"}, 
+    {"Company": "Lyell Immunopharma", "Asset": "LYL119", "Modality": "Reprogrammed CAR-T", "Indication": "Solid Tumors", "Width": "50%"}, 
+    {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T", "Indication": "Ovarian Cancer", "Width": "50%"}, 
+    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"},
+    {"Company": "Obsidian Therapeutics", "Asset": "OBX-115", "Modality": "Regulatable TIL (cytoDRiVE)", "Indication": "Melanoma", "Width": "70%"},
+    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR+NOT)", "Indication": "AML", "Width": "50%"}, 
+    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA", "Indication": "Solid Tumors", "Width": "50%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-003", "Modality": "Systemic Programmable mRNA", "Indication": "Solid Tumors", "Width": "40%"}, 
+    {"Company": "Strand Therapeutics", "Asset": "STX-005", "Modality": "In vivo CAR-T mRNA", "Indication": "Autoimmune Cancers", "Width": "10%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "SRN-101", "Modality": "Universal AAV Immuno-Gene", "Indication": "High-Grade Glioma", "Width": "50%"}, 
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "25%"}, 
+    {"Company": "Outpace Bio", "Asset": "OPB-101", "Modality": "Engineered Cytokine CAR-T", "Indication": "Solid Tumors", "Width": "30%"},
     {"Company": "Trogenix", "Asset": "Lead Asset", "Modality": "SSE Vector (HSV-TK/IL-12)", "Indication": "Glioblastoma", "Width": "50%"}, 
     {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Colorectal Cancer", "Width": "30%"}, 
     {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "HCC", "Width": "30%"}, 
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Lung Squamous Cell Carcinoma", "Width": "10%"}, 
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}, 
-    {"Company": "Siren Biotechnology", "Asset": "SRN-101", "Modality": "Universal AAV Immuno-Gene", "Indication": "High-Grade Glioma", "Width": "50%"}, 
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "25%"}, 
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "20%"}, 
-    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "15%"}, 
-    {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA", "Indication": "Solid Tumors", "Width": "50%"}, 
-    {"Company": "Strand Therapeutics", "Asset": "STX-003", "Modality": "Systemic Programmable mRNA", "Indication": "Solid Tumors", "Width": "40%"}, 
-    {"Company": "Strand Therapeutics", "Asset": "STX-005", "Modality": "In vivo CAR-T mRNA", "Indication": "Autoimmune & Blood Cancers", "Width": "10%"}, 
-    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR+NOT)", "Indication": "AML", "Width": "50%"}, 
-    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, 
-    {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T", "Indication": "Ovarian Cancer", "Width": "50%"}, 
-    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"} 
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}
 ]
 
+# Scaled against Lyell's massive capital baseline
 funding_data = [
-    {"Company": "ArsenalBio", "Amount": 325, "Percentage": "100%"}, 
-    {"Company": "Senti Biosciences", "Amount": 205, "Percentage": "63%"},
-    {"Company": "Strand Therapeutics", "Amount": 97, "Percentage": "30%"},
-    {"Company": "Trogenix", "Amount": 95, "Percentage": "29%"}, 
-    {"Company": "Siren Biotechnology", "Amount": 20, "Percentage": "6%"} 
+    {"Company": "Lyell Immunopharma", "Amount": 425, "Percentage": "100%"},
+    {"Company": "ArsenalBio", "Amount": 325, "Percentage": "76%"}, 
+    {"Company": "Obsidian Therapeutics", "Amount": 275, "Percentage": "64%"},
+    {"Company": "Senti Biosciences", "Amount": 205, "Percentage": "48%"},
+    {"Company": "Outpace Bio", "Amount": 144, "Percentage": "34%"},
+    {"Company": "Strand Therapeutics", "Amount": 97, "Percentage": "23%"},
+    {"Company": "Trogenix", "Amount": 95, "Percentage": "22%"}, 
+    {"Company": "Siren Biotechnology", "Amount": 20, "Percentage": "5%"} 
 ]
 
 # --- DYNAMIC HERO UI INJECTION ---
 st.markdown("""
 <div class="hero-wrapper">
     <div class="hero-banner">
-        <div class="hero-title">Lab Intelligence Terminal</div>
+        <a href="/" style="text-decoration: none; color: inherit;">
+            <div class="hero-title">Lab Intelligence Terminal</div>
+        </a>
         <div class="hero-subtitle">Real-time curation of literature, competitive intelligence, and industry finance.</div>
         <div class="creator-badge">made by <span>Dylan</span></div>
     </div>
@@ -346,23 +354,26 @@ def build_7day_summary(topic_icon, topic_name, papers):
     if not papers: 
         return f"<div class='summary-card'><h4>{topic_icon} {topic_name}</h4><p>No new relevant publications detected in the last 7 days.</p></div>"
     
-    p = papers[0]
-    link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
-    raw_abstract = p.get('abstractText', '')
-    conclusion = safe_text(extract_conclusion(raw_abstract))
-    if len(conclusion) > 200: conclusion = conclusion[:197] + "..."
+    count = len(papers)
+    top_papers = papers[:3]
+    
+    def make_link(p):
+        url = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
+        return f"<a href='{url}' target='_blank'>'{safe_text(p.get('title'))}'</a>"
+
+    narrative = f"<strong>{count} new publications</strong> were indexed this week. "
+    
+    if len(top_papers) == 1:
+        narrative += f"The primary development focused on {make_link(top_papers[0])}."
+    elif len(top_papers) == 2:
+        narrative += f"Key developments included research on {make_link(top_papers[0])}, alongside new insights into {make_link(top_papers[1])}."
+    else:
+        narrative += f"Major advancements this week included {make_link(top_papers[0])}. Additional notable research featured studies on {make_link(top_papers[1])}, as well as explorations into {make_link(top_papers[2])}."
     
     html = f"""
     <div class='summary-card'>
         <h4>{topic_icon} {topic_name}</h4>
-        <div style="flex-grow: 1;">
-            <p style="margin-bottom: 12px; font-size: 0.95rem;"><strong>{len(papers)} new publications</strong> were indexed this week.</p>
-            <div style="background: rgba(255,255,255,0.6); padding: 15px; border-radius: 8px; border-left: 3px solid #9F7AEA;">
-                <span style="font-size: 0.75rem; font-weight: 800; color: #9F7AEA; text-transform: uppercase;">Top Highlight</span><br>
-                <a href='{link}' target='_blank' style='font-size: 0.95rem; display:block; margin-bottom: 8px; line-height: 1.3;'>{safe_text(p.get('title'))}</a>
-                <span style="font-size: 0.85rem; color: #4A5568; line-height: 1.5;"><strong>Key Finding:</strong> {conclusion}</span>
-            </div>
-        </div>
+        <p style="font-size: 0.95rem; line-height: 1.6; color: #4A5568; flex-grow: 1;">{narrative}</p>
     </div>
     """
     return html
@@ -379,7 +390,7 @@ if st.session_state.current_view == "🏠 Home":
     with col3:
         if st.button("🤺 Competitor Pipeline", use_container_width=True): change_view("🤺 Competitor Pipeline"); st.rerun()
         
-    st.markdown("<br>### 🗓️ 7-Day Intelligence Summary", unsafe_allow_html=True)
+    st.markdown("<br><h3>🗓️ 7-Day Intelligence Summary</h3>", unsafe_allow_html=True)
     
     cutoff_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
     
@@ -498,13 +509,19 @@ elif st.session_state.current_view == "🤺 Competitor Pipeline":
         """
         st.markdown(bar_html, unsafe_allow_html=True)
         
-    st.markdown("<br>#### 📰 Recent Competitor News")
+    st.markdown("<h3>📰 Recent Competitor News</h3>", unsafe_allow_html=True)
     with st.spinner("Fetching Competitor News..."):
         comp_news = fetch_news(competitor_news_feeds)
         if not comp_news: st.info("No recent news for targeted competitors.")
         for item in comp_news[:5]:
-            st.markdown(f"**[{item['title']}]({item['link']})**<br><span style='color:gray; font-size:0.85rem;'>{item['published_str']}</span>", unsafe_allow_html=True)
-            st.divider()
+            html_card = f"""
+            <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid #9F7AEA; border-radius: 12px; padding: 20px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #9F7AEA; text-transform: uppercase; margin-bottom: 8px;">COMPETITOR RADAR • {item['source']}</div>
+                <a href="{item['link']}" target="_blank" style="font-size: 1.15rem; font-weight: 700; color: #1E293B; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.4;">{item['title']}</a>
+                <div style="font-size: 0.85rem; color: #64748B;">Published: {item['published_str']}</div>
+            </div>
+            """
+            st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
 
 elif st.session_state.current_view == "⭐ Saved":
     st.markdown("### ⭐ Your Saved Reading List")
