@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import time
 import re
 import html
+import pandas as pd
 
 # --- PAGE CONFIGURATION & STATE INIT ---
 st.set_page_config(
@@ -83,20 +84,14 @@ st.markdown("""
     div[data-baseweb="tab"] { font-size: 1.0rem !important; font-weight: 600 !important; color: #718096 !important; }
     div[data-baseweb="tab"][aria-selected="true"] { color: #2D3748 !important; }
     
-    /* Native Button Styling for "Star" */
-    div.stButton > button {
-        background: rgba(255,255,255,0.7); border: 1px solid rgba(216, 180, 254, 0.5); border-radius: 8px;
-        color: #6B46C1; font-weight: 600; padding: 4px 15px; transition: all 0.2s;
+    /* Summary Paragraph Styling */
+    .narrative-summary {
+        background: rgba(255,255,255,0.85); border-left: 6px solid #D8B4FE;
+        padding: 25px; border-radius: 12px; font-size: 1.1rem; color: #2D3748;
+        line-height: 1.7; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 30px;
     }
-    div.stButton > button:hover { background: #FAF5FF; border-color: #9F7AEA; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(159, 122, 234, 0.2); }
-    
-    /* 24h Summary Metric Cards */
-    .metric-card {
-        background: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,1); border-left: 5px solid #D8B4FE;
-        border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px;
-    }
-    .metric-title { font-size: 0.85rem; font-weight: 700; color: #718096; text-transform: uppercase; }
-    .metric-value { font-size: 2rem; font-weight: 800; color: #2D3748; margin-top: 5px; }
+    .narrative-summary a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
+    .narrative-summary a:hover { text-decoration: underline; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -164,7 +159,7 @@ def fetch_news(rss_urls):
 @st.cache_data(ttl=43200, show_spinner=False)
 def fetch_clinical_trials(query_term):
     url = "https://clinicaltrials.gov/api/v2/studies"
-    params = {"query.term": query_term, "pageSize": 20, "format": "json"}
+    params = {"query.term": query_term, "pageSize": 50, "format": "json"}
     trials = []
     try:
         response = requests.get(url, params=params, timeout=15)
@@ -178,12 +173,12 @@ def fetch_clinical_trials(query_term):
             design_mod = protocol.get('designModule', {})
             
             trials.append({
-                'id': id_mod.get('nctId', 'Unknown'),
-                'title': id_mod.get('briefTitle', 'Untitled Trial'),
-                'status': stat_mod.get('overallStatus', 'Unknown Status'),
-                'phases': ", ".join(design_mod.get('phases', ['Phase Unknown'])),
-                'sponsor': sponsor_mod.get('leadSponsor', {}).get('name', 'Unknown Sponsor'),
-                'date': stat_mod.get('statusDate', 'Recent')
+                'ID': id_mod.get('nctId', 'Unknown'),
+                'Title': id_mod.get('briefTitle', 'Untitled Trial'),
+                'Status': stat_mod.get('overallStatus', 'Unknown'),
+                'Phase': ", ".join(design_mod.get('phases', ['Unknown'])),
+                'Sponsor': sponsor_mod.get('leadSponsor', {}).get('name', 'Unknown Sponsor'),
+                'Updated': stat_mod.get('statusDate', 'Recent')
             })
     except Exception as e: pass
     return trials
@@ -191,18 +186,31 @@ def fetch_clinical_trials(query_term):
 # --- EXHAUSTIVE TARGETED QUERIES ---
 queries = {
     "SynBio": '("synthetic biology" OR "synthetic genome")',
-    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate" OR "multi-input") AND ("gene therapy" OR "AAV" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC")',
+    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate") AND ("gene therapy" OR "AAV" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC")',
     "AAV": '("AAV" OR "adeno-associated virus" OR "AAV capsid" OR "directed evolution AAV")',
-    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing" OR "bioreactor")',
+    "CMC": '("AAV" OR "lentivirus" OR "viral vector") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing")',
     "NonViral": '("LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "liposome" OR "VLP" OR "polyplex")',
     "ViralBroad": '("viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus" OR "baculovirus")',
-    "HCC_CRC": '("hepatocellular carcinoma" OR "HCC" OR "colorectal cancer" OR "CRC") AND ("immunotherapy" OR "CAR-T" OR "gene therapy")',
-    "Competitors": '("Strand Therapeutics" OR "Senti Biosciences" OR "Trogenix" OR "Sirin" OR "Link Cell Therapies")'
+    "HCC_CRC": '("hepatocellular carcinoma" OR "HCC" OR "colorectal cancer" OR "CRC") AND ("immunotherapy" OR "CAR-T" OR "gene therapy")'
 }
 
-general_news_feeds = { "Fierce Biotech": "https://www.fiercebiotech.com/rss/xml", "Endpoints News": "https://endpts.com/feed/" }
-vc_funding_feeds = { "Gene & Cell Therapy VC Deals": "https://news.google.com/rss/search?q=(%22Series+A%22+OR+%22Series+B%22+OR+%22seed+funding%22+OR+%22venture+capital%22+OR+%22raised%22)+AND+(%22gene+therapy%22+OR+%22cell+therapy%22+OR+%22synthetic+biology%22)&hl=en-US&gl=US&ceid=US:en" }
-competitor_news_feeds = { "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Link+Cell+Therapies%22)&hl=en-US&gl=US&ceid=US:en" }
+# Heavily restricted VC query to prevent "raised awareness" false positives
+vc_funding_feeds = { 
+    "Biotech VC Deals": "https://news.google.com/rss/search?q=(%22Series+A%22+OR+%22Series+B%22+OR+%22Series+C%22+OR+%22seed+round%22+OR+%22financing+round%22+OR+%22secures+funding%22)+AND+(%22gene+therapy%22+OR+%22cell+therapy%22+OR+%22synthetic+biology%22+OR+%22oncology%22)&hl=en-US&gl=US&ceid=US:en" 
+}
+
+# --- CURATED COMPETITOR PIPELINE DATABASE ---
+# Hardcoded curated pipeline reflecting actual entities in the logic/cell therapy/HCC space
+pipeline_data = [
+    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR + NOT)", "Indication": "AML", "Stage": "Phase 1", "Progress": 60},
+    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Stage": "Preclinical", "Progress": 30},
+    {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA Circuit", "Indication": "Solid Tumors", "Stage": "Phase 1", "Progress": 60},
+    {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T (AND)", "Indication": "Ovarian Cancer", "Stage": "Phase 1", "Progress": 60},
+    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "Clear Cell Renal Cell Carcinoma", "Stage": "Phase 1", "Progress": 60},
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "Gene Circuit Therapy", "Indication": "Solid Tumors", "Stage": "Discovery", "Progress": 10},
+    {"Company": "Link Cell Therapies", "Asset": "Undisclosed", "Modality": "Cell Therapy", "Indication": "Oncology", "Stage": "Discovery", "Progress": 10},
+    {"Company": "Sirin", "Asset": "Undisclosed", "Modality": "Precision Gene Therapy", "Indication": "Undisclosed", "Stage": "Discovery", "Progress": 10}
+]
 
 # --- DYNAMIC HERO UI INJECTION ---
 st.markdown("""
@@ -220,10 +228,10 @@ with st.sidebar:
     st.markdown("### 🧭 Main Navigation")
     current_view = st.radio("Select View:", [
         "🚀 24h Briefing", 
-        "📚 Literature Database", 
+        "📚 Literature", 
         "🏥 Clinical Trials", 
         "💰 VC Finance", 
-        "🤺 Competitor Matrix", 
+        "🤺 Competitor Pipeline", 
         "⭐ Saved"
     ], label_visibility="collapsed")
     
@@ -243,7 +251,6 @@ with st.sidebar:
 
 # --- RENDERING LOGIC ---
 def render_paper_card(p, context="global"):
-    """Added context parameter to ensure Streamlit Button Keys are 100% unique across tabs."""
     title = safe_text(p.get('title', 'Unknown Title'))
     raw_journal = safe_text(get_journal_name(p))
     is_preprint = p.get('pubType', '') == 'preprint' or p.get('source') == 'PPR' or "rxiv" in raw_journal.lower()
@@ -259,7 +266,6 @@ def render_paper_card(p, context="global"):
     clean_abstract = safe_text(re.sub(r'<[^>]+>', '', raw_abstract))
     conclusion = safe_text(extract_conclusion(raw_abstract))
     
-    # Create an absolutely unique key using context + alphanumeric title hash
     safe_title_hash = re.sub(r'[^a-zA-Z0-9]', '', title)[:20]
     uid = f"{context}_{doi if doi else pmid}_{safe_title_hash}"
 
@@ -301,52 +307,50 @@ def filter_papers_by_ui(all_papers):
 # --- VIEW ROUTING ---
 
 if current_view == "🚀 24h Briefing":
-    st.markdown("### ⚡ Executive Summary: Last 48 Hours")
-    st.write("A culmination of the most relevant intel posted recently across all lab focus areas.")
+    st.markdown("### ⚡ Executive Narrative Briefing")
     
     cutoff_date = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
     
-    with st.spinner("Compiling Intelligence..."):
-        # Fetch data for briefing
+    with st.spinner("Synthesizing Intel..."):
         syn_papers = [p for p in fetch_papers(queries["SynBio"], days_to_fetch, open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
         circuits_papers = [p for p in fetch_papers(queries["Logic"], days_to_fetch, open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
         aav_papers = [p for p in fetch_papers(queries["AAV"], days_to_fetch, open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        trials = [t for t in fetch_clinical_trials("Hepatocellular Carcinoma OR AAV OR Gene Therapy") if t.get('date', '') >= cutoff_date]
+        trials = [t for t in fetch_clinical_trials("Hepatocellular Carcinoma OR Colorectal Cancer OR AAV") if t.get('Updated', '') >= cutoff_date]
         fin_news = [n for n in fetch_news(vc_funding_feeds) if n['published_str'] >= cutoff_date]
     
-    # Render Metrics
-    c1, c2, c3, c4 = st.columns(4)
-    c1.markdown(f"<div class='metric-card'><div class='metric-title'>SynBio & Circuits</div><div class='metric-value'>{len(syn_papers) + len(circuits_papers)}</div></div>", unsafe_allow_html=True)
-    c2.markdown(f"<div class='metric-card'><div class='metric-title'>AAV & Delivery</div><div class='metric-value'>{len(aav_papers)}</div></div>", unsafe_allow_html=True)
-    c3.markdown(f"<div class='metric-card' style='border-left-color: #059669;'><div class='metric-title'>Clinical Trials</div><div class='metric-value'>{len(trials)}</div></div>", unsafe_allow_html=True)
-    c4.markdown(f"<div class='metric-card' style='border-left-color: #10B981;'><div class='metric-title'>VC & Finance</div><div class='metric-value'>{len(fin_news)}</div></div>", unsafe_allow_html=True)
+    # Automated Narrative Generation
+    narrative = []
+    total_papers = len(syn_papers) + len(circuits_papers) + len(aav_papers)
     
-    st.markdown("---")
-    st.markdown("#### 🏆 Top Highlights")
-    
-    if (len(syn_papers) + len(circuits_papers) + len(aav_papers) + len(trials) + len(fin_news)) == 0:
-        st.info("No significant updates in the last 48 hours. Enjoy your coffee! ☕")
-    else:
-        if circuits_papers or syn_papers:
-            with st.expander("🔬 Top Synthetic Biology & Circuits Highlight", expanded=True):
-                top_p = circuits_papers[0] if circuits_papers else syn_papers[0]
-                render_paper_card(top_p, context="briefing_syn")
-        if aav_papers:
-            with st.expander("🦠 Top AAV & Delivery Highlight", expanded=True):
-                render_paper_card(aav_papers[0], context="briefing_aav")
+    if total_papers > 0 or trials or fin_news:
+        narrative.append(f"In the past 48 hours, **{total_papers} new publications** were indexed across our core technical domains.")
+        
+        if circuits_papers:
+            p = circuits_papers[0]
+            link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else "#"
+            narrative.append(f"Notably in *Genetic Circuits*, a new paper titled <a href='{link}' target='_blank'>'{p.get('title', 'Unknown')}'</a> was published in {get_journal_name(p)}.")
+        elif aav_papers:
+            p = aav_papers[0]
+            link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else "#"
+            narrative.append(f"In *AAV Engineering*, recent work titled <a href='{link}' target='_blank'>'{p.get('title', 'Unknown')}'</a> highlights new developments.")
+            
         if trials:
-            with st.expander("🏥 Latest Clinical Trial Update", expanded=True):
-                t = trials[0]
-                st.markdown(f"**[{t['title']}](https://clinicaltrials.gov/study/{t['id']})**<br>Status: {t['status']} | Sponsor: {t['sponsor']}", unsafe_allow_html=True)
+            t = trials[0]
+            narrative.append(f"On the translational front, **{t['Sponsor']}** updated the status of their clinical trial for <a href='https://clinicaltrials.gov/study/{t['ID']}' target='_blank'>'{t['Title']}'</a> to *{t['Status']}* ({t['Phase']}).")
+        
         if fin_news:
-            with st.expander("💰 Latest Industry Funding", expanded=True):
-                n = fin_news[0]
-                st.markdown(f"**[{n['title']}]({n['link']})**<br>Published: {n['published_str']}", unsafe_allow_html=True)
+            n = fin_news[0]
+            narrative.append(f"In industry financing, <a href='{n['link']}' target='_blank'>{n['title']}</a> was recently announced, signaling continued capital deployment in the gene and cell therapy sector.")
+            
+        summary_html = f"<div class='narrative-summary'>{' '.join(narrative)}</div>"
+        st.markdown(summary_html, unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='narrative-summary'>No significant new publications, clinical trial updates, or funding rounds were detected in your core domains over the last 48 hours.</div>", unsafe_allow_html=True)
 
-elif current_view == "📚 Literature Database":
-    st.markdown("### 📚 Literature Database")
+elif current_view == "📚 Literature":
+    st.markdown("### 📚 Curated Literature")
     
-    lit_tabs = st.tabs(["Synthetic Biology", "Genetic Circuits", "AAV Engineering", "CMC & Mfg", "Non-Viral Delivery", "Viral Delivery", "HCC & CRC"])
+    lit_tabs = st.tabs(["🧬 SynBio", "🧮 Genetic Circuits", "🦠 AAV Eng", "🏭 CMC & Mfg", "💉 Non-Viral", "🔬 Viral Delivery", "🎯 HCC & CRC"])
     
     tab_mapping = [
         (lit_tabs[0], queries["SynBio"], "synbio"),
@@ -360,7 +364,7 @@ elif current_view == "📚 Literature Database":
     
     for tab, query, context_id in tab_mapping:
         with tab:
-            with st.spinner('Querying EuropePMC...'):
+            with st.spinner('Querying Database...'):
                 raw_papers = fetch_papers(query, days_to_fetch, open_access_only)
                 filtered_papers = filter_papers_by_ui(raw_papers)
                 if not filtered_papers:
@@ -371,28 +375,28 @@ elif current_view == "📚 Literature Database":
 
 elif current_view == "🏥 Clinical Trials":
     st.markdown("### 🏥 Clinical Trial Tracker")
-    st.caption("Monitoring ClinicalTrials.gov for 'HCC', 'CRC', 'AAV', and 'Gene Therapy'")
-    with st.spinner("Fetching Trials..."):
+    st.write("Structured data pulled directly from ClinicalTrials.gov for 'HCC', 'CRC', 'AAV', and 'Gene Therapy'.")
+    
+    with st.spinner("Structuring Trial Data..."):
         trials = fetch_clinical_trials("Hepatocellular Carcinoma OR Colorectal Cancer OR AAV OR Gene Therapy")
-        if not trials: st.info("No recent trials fetched.")
-        for t in trials[:15]:
-            status_color = "#059669" if "RECRUITING" in t['status'].upper() else "#D97706" if "ACTIVE" in t['status'].upper() else "#475569"
-            link = f"https://clinicaltrials.gov/study/{t['id']}"
-            html_card = f"""
-            <div style="background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,1); border-left: 6px solid {status_color}; border-radius: 12px; padding: 20px; margin-bottom: 5px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-                <div style="font-size: 0.75rem; font-weight: 800; color: {status_color}; text-transform: uppercase; margin-bottom: 8px;">{t['status']} • {t['phases']}</div>
-                <a href="{link}" target="_blank" style="font-size: 1.2rem; font-weight: 700; color: #1E293B; text-decoration: none; display: block; margin-bottom: 8px; line-height: 1.3;">{t['title']}</a>
-                <div style="font-size: 0.9rem; color: #4A5568;"><strong>Sponsor:</strong> {t['sponsor']} &nbsp;|&nbsp; Updated: {t['date']}</div>
-            </div>
-            """
-            st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
-            col1, col2 = st.columns([8.5, 1.5])
-            with col2:
-                if st.button("⭐ Save", key=f"save_t_{t['id']}"): save_item(t['title'], link, "Trial", t['date'])
-            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+        if not trials: 
+            st.info("No recent trials fetched.")
+        else:
+            df_trials = pd.DataFrame(trials)
+            st.dataframe(
+                df_trials, 
+                column_config={
+                    "Title": st.column_config.TextColumn("Trial Title", width="large"),
+                    "Status": st.column_config.TextColumn("Status", width="medium"),
+                    "Phase": st.column_config.TextColumn("Phase", width="small")
+                },
+                hide_index=True,
+                use_container_width=True
+            )
 
 elif current_view == "💰 VC Finance":
-    st.markdown("### 💰 Financial Intelligence (VC & Industry Raises)")
+    st.markdown("### 💰 Financial Intelligence")
+    st.write("Tracking Series A/B, seed rounds, and venture capital raises in the Gene and Cell Therapy sector.")
     with st.spinner("Aggregating Financial News..."):
         vc_news = fetch_news(vc_funding_feeds)
         if not vc_news: st.info("No recent funding news.")
@@ -407,30 +411,31 @@ elif current_view == "💰 VC Finance":
             st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
             col1, col2 = st.columns([8.5, 1.5])
             with col2:
-                # Use hash for unique button ID in news
                 safe_hash = re.sub(r'[^a-zA-Z0-9]', '', item['title'])[:15]
                 if st.button("⭐ Save", key=f"save_n_{safe_hash}"): save_item(item['title'], item['link'], "Finance", item['published_str'])
             st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 
-elif current_view == "🤺 Competitor Matrix":
-    st.markdown("### 🤺 Competitor Entity Matrix")
-    st.caption("Tracking: Strand Therapeutics, Senti Biosciences, Trogenix, Sirin, Link Cell Therapies")
+elif current_view == "🤺 Competitor Pipeline":
+    st.markdown("### 🤺 Competitor Entity Pipeline")
+    st.write("A curated, visual representation of clinical and preclinical assets developed by rival organizations focusing on logic gating, cell therapy, and precision oncology.")
     
-    comp_col1, comp_col2 = st.columns(2)
-    with comp_col1:
-        st.markdown("#### 📰 Recent Corporate News")
-        comp_news = fetch_news(competitor_news_feeds)
-        if not comp_news: st.info("No recent news for targeted competitors.")
-        for item in comp_news[:8]:
-            st.markdown(f"**[{item['title']}]({item['link']})**<br><span style='color:gray; font-size:0.85rem;'>{item['published_str']}</span>", unsafe_allow_html=True)
-            st.divider()
-            
-    with comp_col2:
-        st.markdown("#### 🔬 Recent Publications")
-        comp_papers = filter_papers_by_ui(fetch_papers(queries["Competitors"], days_back=90))
-        if not comp_papers: st.info("No recent papers from targeted competitors.")
-        for p in comp_papers[:8]:
-            render_paper_card(p, context="comp")
+    df_pipeline = pd.DataFrame(pipeline_data)
+    
+    st.dataframe(
+        df_pipeline,
+        column_config={
+            "Company": st.column_config.TextColumn("Entity", width="medium"),
+            "Asset": st.column_config.TextColumn("Asset Name", width="small"),
+            "Modality": st.column_config.TextColumn("Modality", width="medium"),
+            "Indication": st.column_config.TextColumn("Target Indication", width="medium"),
+            "Stage": st.column_config.TextColumn("Clinical Stage", width="small"),
+            "Progress": st.column_config.ProgressColumn("Pipeline Progression", format="%f", min_value=0, max_value=100)
+        },
+        hide_index=True,
+        use_container_width=True
+    )
+    
+    st.markdown("<br><p style='font-size:0.85rem; color:gray;'>*Note: Early stage biotech pipelines are notoriously opaque. This table is manually curated based on publicly available PR and SEC filings.*</p>", unsafe_allow_html=True)
 
 elif current_view == "⭐ Saved":
     st.markdown("### ⭐ Your Saved Reading List")
