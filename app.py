@@ -14,7 +14,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize Session State for Routing & Saving
 if 'current_view' not in st.session_state:
     st.session_state.current_view = "🏠 Home"
 if 'saved_items' not in st.session_state:
@@ -108,38 +107,42 @@ st.markdown("""
         background: white; border-color: #9F7AEA; box-shadow: 0 4px 15px rgba(216,180,254,0.3); transform: translateY(-2px);
     }
 
-    /* Summary Paragraph Styling */
-    .narrative-summary {
-        background: rgba(255,255,255,0.85); border-left: 4px solid #D8B4FE;
-        padding: 20px 25px; border-radius: 12px; font-size: 1.05rem; color: #2D3748;
-        line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px;
+    /* 7-Day Summary Grid Cards */
+    .summary-card {
+        background: rgba(255,255,255,0.85); border-left: 5px solid #D8B4FE;
+        padding: 25px; border-radius: 12px; color: #2D3748; height: 100%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; display: flex; flex-direction: column;
     }
-    .narrative-summary strong { color: #6B46C1; }
-    .narrative-summary a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
-    .narrative-summary a:hover { text-decoration: underline; }
+    .summary-card h4 { margin-top: 0; color: #1E293B; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 15px;}
+    .summary-card p { font-size: 0.95rem; line-height: 1.6; flex-grow: 1; }
+    .summary-card a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
+    .summary-card a:hover { text-decoration: underline; }
     
-    /* Custom StrandTx Style Pipeline Tracker */
+    /* Custom StrandTx Style Pipeline Tracker & Funding Chart */
     .pipeline-grid {
-        display: grid; grid-template-columns: 2fr 1fr 1fr 4fr; gap: 15px; align-items: center;
+        display: grid; grid-template-columns: 2.5fr 1.5fr 1.5fr 4fr; gap: 15px; align-items: center;
         background: rgba(255,255,255,0.9); padding: 15px; border-radius: 8px; margin-bottom: 10px;
         border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
     .pipeline-header { font-weight: 700; color: #4A5568; font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 10px;}
     .pipeline-col { font-size: 0.95rem; color: #2D3748; font-weight: 500; }
-    .pipeline-subtext { font-size: 0.75rem; color: #718096; }
+    .pipeline-subtext { font-size: 0.8rem; color: #718096; }
     
     .phase-container {
         display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
-        background: #EDF2F7; border-radius: 20px; overflow: hidden; height: 12px; position: relative;
+        background: #EDF2F7; border-radius: 20px; overflow: hidden; height: 14px; position: relative;
     }
     .phase-fill {
         background: linear-gradient(90deg, #D8B4FE, #9F7AEA); height: 100%; border-radius: 20px;
         position: absolute; left: 0; top: 0; transition: width 0.5s ease;
     }
-    .phase-labels {
-        display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
-        font-size: 0.65rem; color: #A0AEC0; text-align: center; margin-top: 4px; font-weight: 600; text-transform: uppercase;
-    }
+    
+    /* Horizontal Funding Bar Chart */
+    .funding-row { display: flex; align-items: center; margin-bottom: 12px; }
+    .funding-label { width: 150px; font-weight: 600; font-size: 0.9rem; color: #4A5568; }
+    .funding-bar-container { flex-grow: 1; background: #EDF2F7; border-radius: 8px; height: 18px; position: relative; margin: 0 15px; }
+    .funding-bar { background: linear-gradient(90deg, #34D399, #10B981); height: 100%; border-radius: 8px; }
+    .funding-value { width: 80px; text-align: right; font-weight: 700; font-size: 0.95rem; color: #1E293B; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -204,33 +207,6 @@ def fetch_news(rss_urls):
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
-@st.cache_data(ttl=43200, show_spinner=False)
-def fetch_clinical_trials(query_term):
-    url = "https://clinicaltrials.gov/api/v2/studies"
-    params = {"query.term": query_term, "pageSize": 50, "format": "json"}
-    trials = []
-    try:
-        response = requests.get(url, params=params, timeout=15)
-        response.raise_for_status()
-        studies = response.json().get('studies', [])
-        for s in studies:
-            protocol = s.get('protocolSection', {})
-            id_mod = protocol.get('identificationModule', {})
-            stat_mod = protocol.get('statusModule', {})
-            sponsor_mod = protocol.get('sponsorCollaboratorsModule', {})
-            design_mod = protocol.get('designModule', {})
-            
-            trials.append({
-                'id': id_mod.get('nctId', 'Unknown'),
-                'title': id_mod.get('briefTitle', 'Untitled Trial'),
-                'status': stat_mod.get('overallStatus', 'Unknown Status'),
-                'phases': ", ".join(design_mod.get('phases', ['Phase Unknown'])),
-                'sponsor': sponsor_mod.get('leadSponsor', {}).get('name', 'Unknown Sponsor'),
-                'date': stat_mod.get('statusDate', 'Recent')
-            })
-    except Exception as e: pass
-    return trials
-
 # --- EXHAUSTIVE TARGETED QUERIES ---
 queries = {
     "SynBio": '("synthetic biology" OR "synthetic genome")',
@@ -243,24 +219,40 @@ queries = {
     "Immunotherapy": '("immunotherapy" OR "CAR-T" OR "gene therapy" OR "T-cell therapy") AND ("cancer" OR "oncology")'
 }
 
-# Heavily restricted VC query for precise financial extraction
 vc_funding_feeds = { 
     "Gene & Cell Therapy VC Deals": "https://news.google.com/rss/search?q=(%22Series+A%22+OR+%22Series+B%22+OR+%22Series+C%22+OR+%22Series+D%22+OR+%22seed+round%22+OR+%22venture+capital%22)+AND+(%22gene+therapy%22+OR+%22cell+therapy%22)&hl=en-US&gl=US&ceid=US:en" 
 }
 competitor_news_feeds = { 
-    "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Link+Cell+Therapies%22+OR+%22ArsenalBio%22)&hl=en-US&gl=US&ceid=US:en" 
+    "Competitor Radar": "https://news.google.com/rss/search?q=(%22Strand+Therapeutics%22+OR+%22Senti+Biosciences%22+OR+%22Trogenix%22+OR+%22Siren+Biotechnology%22+OR+%22ArsenalBio%22)&hl=en-US&gl=US&ceid=US:en" 
 }
 
-# --- CURATED COMPETITOR PIPELINE DATABASE ---
+# --- CURATED COMPETITOR PIPELINE DATABASE (Directly Sourced From Websites) ---
+# Width mapping: Discovery(10%), Preclinical(30%), Phase 1(50%), Phase 2(70%), Phase 3(90%)
 pipeline_data = [
-    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK", "Indication": "AML", "Width": "50%"}, # Phase 1
-    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, # Preclinical
+    {"Company": "Trogenix", "Asset": "Lead Asset", "Modality": "SSE Vector (HSV-TK/IL-12)", "Indication": "Glioblastoma", "Width": "50%"}, # Phase 1 (Expected Q2 2026)
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Colorectal Cancer", "Width": "30%"}, # Preclinical
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "HCC", "Width": "30%"}, # Preclinical
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Lung Squamous Cell Carcinoma", "Width": "10%"}, # Discovery
+    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}, # Discovery
+    {"Company": "Siren Biotechnology", "Asset": "SRN-101", "Modality": "Universal AAV Immuno-Gene", "Indication": "High-Grade Glioma", "Width": "50%"}, # Phase 1 (IND cleared Jan 2026)
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "25%"}, # End of PoC
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "20%"}, # Middle of PoC
+    {"Company": "Siren Biotechnology", "Asset": "Undisclosed", "Modality": "Universal AAV Immuno-Gene", "Indication": "Solid Tumors", "Width": "15%"}, # Beginning of PoC
     {"Company": "Strand Therapeutics", "Asset": "STX-001", "Modality": "Programmable mRNA", "Indication": "Solid Tumors", "Width": "50%"}, # Phase 1
+    {"Company": "Strand Therapeutics", "Asset": "STX-003", "Modality": "Systemic Programmable mRNA", "Indication": "Solid Tumors", "Width": "40%"}, # IND-Enabling
+    {"Company": "Strand Therapeutics", "Asset": "STX-005", "Modality": "In vivo CAR-T mRNA", "Indication": "Autoimmune & Blood Cancers", "Width": "10%"}, # Discovery
+    {"Company": "Senti Biosciences", "Asset": "SENTI-202", "Modality": "Logic-Gated CAR-NK (OR+NOT)", "Indication": "AML", "Width": "50%"}, # Phase 1
+    {"Company": "Senti Biosciences", "Asset": "SENTI-301A", "Modality": "Logic-Gated CAR-NK", "Indication": "HCC", "Width": "30%"}, # Preclinical
     {"Company": "ArsenalBio", "Asset": "AB-1015", "Modality": "Logic-Gated CAR-T", "Indication": "Ovarian Cancer", "Width": "50%"}, # Phase 1
-    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"}, # Phase 1
-    {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "Gene Circuit Therapy", "Indication": "Solid Tumors", "Width": "10%"}, # Discovery
-    {"Company": "Link Cell Therapies", "Asset": "Undisclosed", "Modality": "Cell Therapy", "Indication": "Oncology", "Width": "10%"}, # Discovery
-    {"Company": "Sirin", "Asset": "Undisclosed", "Modality": "Precision Gene Therapy", "Indication": "Undisclosed", "Width": "10%"} # Discovery
+    {"Company": "ArsenalBio", "Asset": "AB-2100", "Modality": "Logic-Gated CAR-T", "Indication": "ccRCC", "Width": "50%"} # Phase 1
+]
+
+funding_data = [
+    {"Company": "ArsenalBio", "Amount": 325, "Percentage": "100%"}, 
+    {"Company": "Senti Biosciences", "Amount": 205, "Percentage": "63%"},
+    {"Company": "Strand Therapeutics", "Amount": 97, "Percentage": "30%"},
+    {"Company": "Trogenix", "Amount": 95, "Percentage": "29%"}, # £70m Series A in Oct 2025 (~$95M USD)
+    {"Company": "Siren Biotechnology", "Amount": 20, "Percentage": "6%"} 
 ]
 
 # --- DYNAMIC HERO UI INJECTION ---
@@ -284,7 +276,7 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    days_to_fetch = st.slider("Lookback Window (Days)", min_value=1, max_value=30, value=7, step=1) 
+    days_to_fetch = st.slider("Literature Lookback (Days)", min_value=1, max_value=30, value=7, step=1) 
     literature_filter = st.radio("Source Filter:", ["All", "Peer-Reviewed", "Preprints"], horizontal=True)
     open_access_only = st.checkbox("🔓 Open Access Only")
     
@@ -334,7 +326,6 @@ def render_paper_card(p, context="global"):
     """
     st.markdown(html_card.replace('\n', ''), unsafe_allow_html=True)
     
-    # Highly subtle save button aligned right
     c1, c2 = st.columns([9.2, 0.8])
     with c2:
         if st.button("⭐ Save", key=f"save_p_{uid}"):
@@ -352,45 +343,52 @@ def filter_papers_by_ui(all_papers):
         filtered.append(p)
     return filtered
 
-def build_summary_narrative(topic_name, papers):
-    if not papers: return f"**{topic_name}:** No new relevant publications detected in the last 48 hours."
+def build_7day_summary(topic_icon, topic_name, papers):
+    if not papers: 
+        return f"<div class='summary-card'><h4>{topic_icon} {topic_name}</h4><p>No new relevant publications detected in the last 7 days.</p></div>"
+    
     p = papers[0]
     link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
-    return f"**{topic_name}:** {len(papers)} new publications were indexed. Notably, <a href='{link}' target='_blank'>'{safe_text(p.get('title'))}'</a> was recently published in {safe_text(get_journal_name(p))}."
+    
+    html = f"""
+    <div class='summary-card'>
+        <h4>{topic_icon} {topic_name}</h4>
+        <p><strong>{len(papers)} new publications</strong> were indexed this week.<br><br>
+        Notably, <a href='{link}' target='_blank'>'{safe_text(p.get('title'))}'</a> was recently published in <i>{safe_text(get_journal_name(p))}</i>.</p>
+    </div>
+    """
+    return html
 
 # --- VIEW ROUTING ---
 
 if st.session_state.current_view == "🏠 Home":
-    # Portal Navigation Buttons
-    col1, col2, col3, col4 = st.columns(4)
+    # Quick Portal Navigation
+    col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("📚 Literature", use_container_width=True): change_view("📚 Literature"); st.rerun()
+        if st.button("📚 Jump to Literature Database", use_container_width=True): change_view("📚 Literature"); st.rerun()
     with col2:
-        if st.button("💰 VC Finance", use_container_width=True): change_view("💰 VC Finance"); st.rerun()
+        if st.button("💰 Jump to VC Finance", use_container_width=True): change_view("💰 VC Finance"); st.rerun()
     with col3:
-        if st.button("🤺 Competitor Pipeline", use_container_width=True): change_view("🤺 Competitor Pipeline"); st.rerun()
-    with col4:
-        if st.button("⭐ Saved", use_container_width=True): change_view("⭐ Saved"); st.rerun()
+        if st.button("🤺 Jump to Competitor Pipeline", use_container_width=True): change_view("🤺 Competitor Pipeline"); st.rerun()
         
-    st.markdown("### ⚡ 24-Hour Intelligence Summary")
+    st.markdown("<br>### 🗓️ 7-Day Intelligence Summary", unsafe_allow_html=True)
     
-    cutoff_date = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+    cutoff_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
     
-    with st.spinner("Synthesizing Daily Intelligence..."):
-        circuits_papers = [p for p in fetch_papers(queries["Logic"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        aav_papers = [p for p in fetch_papers(queries["AAV"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        hcc_papers = [p for p in fetch_papers(queries["HCC"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        immuno_papers = [p for p in fetch_papers(queries["Immunotherapy"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+    with st.spinner("Synthesizing Weekly Intelligence..."):
+        circuits_papers = [p for p in fetch_papers(queries["Logic"], days_back=7, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        aav_papers = [p for p in fetch_papers(queries["AAV"], days_back=7, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        hcc_papers = [p for p in fetch_papers(queries["HCC"], days_back=7, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        immuno_papers = [p for p in fetch_papers(queries["Immunotherapy"], days_back=7, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
 
-    summary_html = f"""
-    <div class='narrative-summary'>
-        <p>{build_summary_narrative("Genetic Circuits", circuits_papers)}</p>
-        <p>{build_summary_narrative("AAV Engineering", aav_papers)}</p>
-        <p>{build_summary_narrative("Hepatocellular Carcinoma (HCC)", hcc_papers)}</p>
-        <p>{build_summary_narrative("Immunotherapy", immuno_papers)}</p>
-    </div>
-    """
-    st.markdown(summary_html, unsafe_allow_html=True)
+    # 2x2 Grid for 7-Day Summaries
+    r1c1, r1c2 = st.columns(2)
+    with r1c1: st.markdown(build_7day_summary("🧮", "Genetic Circuits", circuits_papers), unsafe_allow_html=True)
+    with r1c2: st.markdown(build_7day_summary("🦠", "AAV Engineering", aav_papers), unsafe_allow_html=True)
+    
+    r2c1, r2c2 = st.columns(2)
+    with r2c1: st.markdown(build_7day_summary("🎯", "Hepatocellular Carcinoma", hcc_papers), unsafe_allow_html=True)
+    with r2c2: st.markdown(build_7day_summary("🛡️", "Immunotherapy", immuno_papers), unsafe_allow_html=True)
 
 elif st.session_state.current_view == "📚 Literature":
     st.markdown("### 📚 Literature")
@@ -441,7 +439,7 @@ elif st.session_state.current_view == "💰 VC Finance":
 
 elif st.session_state.current_view == "🤺 Competitor Pipeline":
     st.markdown("### 🤺 Competitor Entity Pipeline")
-    st.write("A visual representation of clinical and preclinical assets developed by rival organizations focusing on logic gating, cell therapy, and precision oncology.")
+    st.write("A curated visual representation of clinical and preclinical assets developed by rival organizations focusing on logic gating, cell therapy, and precision oncology.")
     
     st.markdown("""
         <div class='pipeline-grid pipeline-header'>
@@ -475,9 +473,24 @@ elif st.session_state.current_view == "🤺 Competitor Pipeline":
         </div>
         """
         st.markdown(pipeline_html.replace('\n', ''), unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+        
+    st.markdown("<p style='font-size:0.8rem; color:#A0AEC0;'>* Data is manually curated based on publicly available PR and corporate website pipelines.</p><br>", unsafe_allow_html=True)
     
-    st.markdown("#### 📰 Recent Competitor News")
+    st.markdown("### 💰 Disclosed Entity Funding ($M)")
+    
+    for f in funding_data:
+        bar_html = f"""
+        <div class="funding-row">
+            <div class="funding-label">{f['Company']}</div>
+            <div class="funding-bar-container">
+                <div class="funding-bar" style="width: {f['Percentage']};"></div>
+            </div>
+            <div class="funding-value">${f['Amount']}M</div>
+        </div>
+        """
+        st.markdown(bar_html, unsafe_allow_html=True)
+        
+    st.markdown("<br>#### 📰 Recent Competitor News")
     with st.spinner("Fetching Competitor News..."):
         comp_news = fetch_news(competitor_news_feeds)
         if not comp_news: st.info("No recent news for targeted competitors.")
