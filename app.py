@@ -204,6 +204,33 @@ def fetch_news(rss_urls):
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
+@st.cache_data(ttl=43200, show_spinner=False)
+def fetch_clinical_trials(query_term):
+    url = "https://clinicaltrials.gov/api/v2/studies"
+    params = {"query.term": query_term, "pageSize": 50, "format": "json"}
+    trials = []
+    try:
+        response = requests.get(url, params=params, timeout=15)
+        response.raise_for_status()
+        studies = response.json().get('studies', [])
+        for s in studies:
+            protocol = s.get('protocolSection', {})
+            id_mod = protocol.get('identificationModule', {})
+            stat_mod = protocol.get('statusModule', {})
+            sponsor_mod = protocol.get('sponsorCollaboratorsModule', {})
+            design_mod = protocol.get('designModule', {})
+            
+            trials.append({
+                'id': id_mod.get('nctId', 'Unknown'),
+                'title': id_mod.get('briefTitle', 'Untitled Trial'),
+                'status': stat_mod.get('overallStatus', 'Unknown Status'),
+                'phases': ", ".join(design_mod.get('phases', ['Phase Unknown'])),
+                'sponsor': sponsor_mod.get('leadSponsor', {}).get('name', 'Unknown Sponsor'),
+                'date': stat_mod.get('statusDate', 'Recent')
+            })
+    except Exception as e: pass
+    return trials
+
 # --- EXHAUSTIVE TARGETED QUERIES ---
 queries = {
     "SynBio": '("synthetic biology" OR "synthetic genome")',
@@ -350,10 +377,10 @@ if st.session_state.current_view == "🏠 Home":
     cutoff_date = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
     
     with st.spinner("Synthesizing Daily Intelligence..."):
-        circuits_papers = [p for p in fetch_papers(queries["Logic"], days_to_fetch=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        aav_papers = [p for p in fetch_papers(queries["AAV"], days_to_fetch=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        hcc_papers = [p for p in fetch_papers(queries["HCC"], days_to_fetch=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
-        immuno_papers = [p for p in fetch_papers(queries["Immunotherapy"], days_to_fetch=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        circuits_papers = [p for p in fetch_papers(queries["Logic"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        aav_papers = [p for p in fetch_papers(queries["AAV"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        hcc_papers = [p for p in fetch_papers(queries["HCC"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
+        immuno_papers = [p for p in fetch_papers(queries["Immunotherapy"], days_back=2, oa_only=open_access_only) if p.get('firstPublicationDate', '') >= cutoff_date]
 
     summary_html = f"""
     <div class='narrative-summary'>
@@ -416,7 +443,20 @@ elif st.session_state.current_view == "🤺 Competitor Pipeline":
     st.markdown("### 🤺 Competitor Entity Pipeline")
     st.write("A visual representation of clinical and preclinical assets developed by rival organizations focusing on logic gating, cell therapy, and precision oncology.")
     
-    st.markdown("<div class='pipeline-grid pipeline-header'><div>COMPANY & ASSET</div><div>MODALITY</div><div>INDICATION</div><div><span style='margin-left: 10%;'>DISCOVERY</span> <span style='margin-left: 10%;'>PRECLINICAL</span> <span style='margin-left: 10%;'>PHASE 1</span> <span style='margin-left: 8%;'>PHASE 2</span> <span style='margin-left: 8%;'>PHASE 3</span></div></div>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class='pipeline-grid pipeline-header'>
+            <div>COMPANY & ASSET</div>
+            <div>MODALITY</div>
+            <div>INDICATION</div>
+            <div>
+                <span style='margin-left: 5%;'>DISC.</span> 
+                <span style='margin-left: 9%;'>PRECLINICAL</span> 
+                <span style='margin-left: 8%;'>PHASE 1</span> 
+                <span style='margin-left: 10%;'>PHASE 2</span> 
+                <span style='margin-left: 10%;'>PHASE 3</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
     for row in pipeline_data:
         pipeline_html = f"""
