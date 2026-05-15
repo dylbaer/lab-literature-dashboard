@@ -72,9 +72,9 @@ st.markdown("""
     }
     .hero-title {
         font-size: 3.1rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.04em; color: #2D3748;
-        text-shadow: 0 2px 10px rgba(255,255,255,0.9); transition: transform 0.2s;
+        text-shadow: 0 2px 10px rgba(255,255,255,0.9); transition: transform 0.2s; display: inline-block;
     }
-    .hero-title:hover { transform: scale(1.01); }
+    .hero-title:hover { transform: scale(1.01); color: #6B46C1; }
     .hero-subtitle { font-size: 1.2rem; font-weight: 500; color: #4A5568; max-width: 800px; margin: 0 auto; }
     
     .creator-badge {
@@ -115,7 +115,9 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; display: flex; flex-direction: column;
     }
     .summary-card h4 { margin-top: 0; color: #1E293B; font-weight: 800; font-size: 1.1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 15px;}
-    .summary-card p { font-size: 0.95rem; line-height: 1.6; flex-grow: 1; }
+    .summary-card p { font-size: 0.95rem; line-height: 1.6; }
+    .summary-card ul { padding-left: 20px; font-size: 0.9rem; color: #4A5568; flex-grow: 1; }
+    .summary-card li { margin-bottom: 12px; line-height: 1.5; }
     .summary-card a { color: #9F7AEA; font-weight: 600; text-decoration: none; }
     .summary-card a:hover { text-decoration: underline; }
     
@@ -157,7 +159,7 @@ def strip_tags(text):
 def safe_text(text): return html.escape(str(text)) if text else "N/A"
 
 def extract_conclusion(abstract_text):
-    if not abstract_text or len(abstract_text) < 50: return "No sufficient abstract text."
+    if not abstract_text or len(abstract_text) < 50: return "No abstract available."
     clean_text = re.sub(r'<[^>]+>', '', abstract_text)
     sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', clean_text) if len(s.strip()) > 10]
     return " ".join(sentences[-2:]) if len(sentences) > 3 else clean_text
@@ -208,16 +210,16 @@ def fetch_news(rss_urls):
         except: pass 
     return sorted(news_items, key=lambda x: x['date_obj'], reverse=True)
 
-# --- EXHAUSTIVE TARGETED QUERIES (Precision Upgrades) ---
+# --- EXHAUSTIVE TARGETED QUERIES (Surgical Precision Upgrades) ---
 queries = {
-    "SynBio": '("synthetic biology" OR "synthetic genome")',
-    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "AND gate" OR "NOT gate" OR "OR gate" OR "boolean logic" OR "logic gate") AND ("gene therapy" OR "adeno-associated virus" OR "AAV vector" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC")',
-    "AAV": '("adeno-associated virus" OR "AAV capsid" OR "AAV vector" OR "AAV delivery" OR "directed evolution AAV" OR ("AAV" AND "gene therapy")) NOT ("vasculitis" OR "ANCA")',
+    "SynBio": '("synthetic biology" OR "synthetic genome" OR "programmable biology")',
+    "Logic": '("synthetic gene circuit" OR "genetic circuit" OR "boolean logic gate" OR "logic-gated" OR "multi-input circuit" OR "synthetic logic") AND ("gene therapy" OR "AAV" OR "cancer" OR "cell therapy" OR "HCC" OR "CRC" OR "oncology")',
+    "AAV": '(("adeno-associated virus" OR "AAV") AND ("capsid" OR "vector" OR "gene therapy" OR "transduction" OR "delivery")) NOT ("vasculitis" OR "ANCA" OR "sepsis" OR "macrophage" OR "pulmonary" OR "injury")',
     "CMC": '("adeno-associated virus" OR "lentivirus" OR "viral vector" OR "AAV") AND ("CMC" OR "manufacturing" OR "bioprocessing" OR "GMP" OR "scale-up" OR "downstream processing") NOT ("vasculitis" OR "ANCA")',
     "NonViral": '("LNP" OR "lipid nanoparticle" OR "polymeric nanoparticle" OR "non-viral delivery" OR "liposome" OR "VLP" OR "polyplex")',
     "ViralBroad": '("viral vector" OR "lentivirus" OR "adenovirus" OR "retrovirus" OR "baculovirus") NOT ("vasculitis" OR "ANCA")',
-    "HCC": '("hepatocellular carcinoma" OR "HCC")',
-    "Immunotherapy": '("immunotherapy" OR "CAR-T" OR "gene therapy" OR "T-cell therapy") AND ("cancer" OR "oncology")'
+    "HCC": '("hepatocellular carcinoma" OR "HCC") AND ("immunotherapy" OR "gene therapy" OR "CAR-T" OR "AAV" OR "tumor") NOT ("Hepatitis C" OR "HCV")',
+    "Immunotherapy": '("immunotherapy" OR "CAR-T" OR "gene therapy" OR "T-cell therapy") AND ("solid tumor" OR "oncology" OR "cancer")'
 }
 
 vc_funding_feeds = { 
@@ -248,7 +250,6 @@ pipeline_data = [
     {"Company": "Trogenix", "Asset": "Undisclosed", "Modality": "SSE Vector", "Indication": "Fibrosis", "Width": "10%"}
 ]
 
-# Scaled against Lyell's massive capital baseline
 funding_data = [
     {"Company": "Lyell Immunopharma", "Amount": 425, "Percentage": "100%"},
     {"Company": "ArsenalBio", "Amount": 325, "Percentage": "76%"}, 
@@ -264,7 +265,7 @@ funding_data = [
 st.markdown("""
 <div class="hero-wrapper">
     <div class="hero-banner">
-        <a href="/" style="text-decoration: none; color: inherit;">
+        <a href="javascript:window.location.reload(true);" style="text-decoration: none; color: inherit;">
             <div class="hero-title">Lab Intelligence Terminal</div>
         </a>
         <div class="hero-subtitle">Real-time curation of literature, competitive intelligence, and industry finance.</div>
@@ -354,28 +355,22 @@ def build_7day_summary(topic_icon, topic_name, papers):
     if not papers: 
         return f"<div class='summary-card'><h4>{topic_icon} {topic_name}</h4><p>No new relevant publications detected in the last 7 days.</p></div>"
     
-    count = len(papers)
-    top_papers = papers[:3]
-    
-    def make_link(p):
-        url = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
-        return f"<a href='{url}' target='_blank'>'{safe_text(p.get('title'))}'</a>"
-
-    narrative = f"<strong>{count} new publications</strong> were indexed this week. "
-    
-    if len(top_papers) == 1:
-        narrative += f"The primary development focused on {make_link(top_papers[0])}."
-    elif len(top_papers) == 2:
-        narrative += f"Key developments included research on {make_link(top_papers[0])}, alongside new insights into {make_link(top_papers[1])}."
-    else:
-        narrative += f"Major advancements this week included {make_link(top_papers[0])}. Additional notable research featured studies on {make_link(top_papers[1])}, as well as explorations into {make_link(top_papers[2])}."
-    
     html = f"""
     <div class='summary-card'>
         <h4>{topic_icon} {topic_name}</h4>
-        <p style="font-size: 0.95rem; line-height: 1.6; color: #4A5568; flex-grow: 1;">{narrative}</p>
-    </div>
+        <p><strong>{len(papers)} new publications</strong> were indexed this week. Key highlights include:</p>
+        <ul>
     """
+    
+    for p in papers[:3]:
+        link = f"https://doi.org/{p.get('doi')}" if p.get('doi') else f"https://europepmc.org/article/MED/{p.get('pmid')}" if p.get('pmid') else "#"
+        raw_abstract = p.get('abstractText', '')
+        conclusion = safe_text(extract_conclusion(raw_abstract))
+        if len(conclusion) > 180: conclusion = conclusion[:177] + "..."
+        
+        html += f"<li><strong><a href='{link}' target='_blank'>{safe_text(p.get('title'))}</a></strong><br><em>Finding:</em> {conclusion}</li>"
+        
+    html += "</ul></div>"
     return html
 
 # --- VIEW ROUTING ---
